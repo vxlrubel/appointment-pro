@@ -1,0 +1,47 @@
+@import './base.css';
+
+
+header.px-header {
+    background: #1e1e1e;
+    padding: 20px 20px 25px;
+    color: #d1d1d1;
+
+	h1 {
+		padding: 0;
+		margin-bottom: 8px;
+		color: white;
+	}
+}
+
+.px-main{
+	--sidebar-width: 250px;
+	--content-width: calc(100% - var(--sidebar-width));
+	display: flex;
+
+	.px-sidebar{
+		width: var(--sidebar-width);
+		background: #fff;
+		padding-block: 20px;
+		a{
+			display: block;
+			padding: 8px 20px;
+			color: #000;
+			text-decoration: none;
+			border-bottom: 1px solid #dee2e6;
+			outline: none;
+			box-shadow: none;
+			&:hover{
+				background: #f8f9fa;
+			}
+
+			&.router-link-active{
+				background: var(--px-primary);
+				color: #fff;
+			}
+		}
+	}
+	.px-main-content{
+		width: var(--content-width);
+		padding: 20px;
+	}
+}
