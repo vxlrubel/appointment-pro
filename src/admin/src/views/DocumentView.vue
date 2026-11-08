@@ -27,17 +27,25 @@
       </li>
     </ol>
     <p>
-      The public wizard only shows a service if a staff member is linked to that service at the
-      chosen location and has hours that day.
+      The public wizard starts with all enabled services and provides location and category filters.
+      Customers can book a service at locations with an enabled staff assignment and available
+      hours.
     </p>
 
     <h3>3. Public booking steps</h3>
-    <p>Location &rarr; Service &rarr; Staff &rarr; Time &rarr; Extras &rarr; Details &rarr; Payment &rarr; Done.</p>
+    <p>Service &rarr; Staff &rarr; Time &rarr; Extras &rarr; Details &rarr; Payment &rarr; Done.</p>
     <p>
       Guests can book without a WordPress account. Optional account creation is available on the
       details step.
     </p>
 
+    <p>
+      Use the location and category filters above the services. Choosing either filter shows only
+      related options in the other. Selecting a service automatically selects its category and keeps
+      the chosen location, or uses its first configured location when All locations is selected.
+      There is no separate location step. The date-and-time step includes a visible calendar; dates
+      without available slots are disabled.
+    </p>
     <h3>4. Payments</h3>
     <p>Open <strong>Settings</strong> and enable the methods you need:</p>
     <ul>
@@ -47,9 +55,16 @@
       <li><strong>WooCommerce</strong> — only if WooCommerce is installed.</li>
     </ul>
 
-    <p>For Stripe, configure the webhook URL <code>/wp-json/px-appointment/v1/webhooks/stripe</code> with payment intent success and failure events, then save its signing secret in Settings.</p>
-<p>For PayPal, configure <code>/wp-json/px-appointment/v1/webhooks/paypal</code> and save its webhook ID. Test using sandbox credentials before switching to live payments.</p>
-<h3>5. Appointments</h3>
+    <p>
+      For Stripe, configure the webhook URL
+      <code>/wp-json/px-appointment/v1/webhooks/stripe</code> with payment intent success and
+      failure events, then save its signing secret in Settings.
+    </p>
+    <p>
+      For PayPal, configure <code>/wp-json/px-appointment/v1/webhooks/paypal</code> and save its
+      webhook ID. Test using sandbox credentials before switching to live payments.
+    </p>
+    <h3>5. Appointments</h3>
     <p>
       Use <strong>Appointments</strong> to add bookings, approve, cancel, or mark done. Use
       <strong>Calendar</strong> for a week view. Email templates live under
