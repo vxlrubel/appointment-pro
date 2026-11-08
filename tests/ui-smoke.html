@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/public/public.css"></head><body>
+<div id="px-appointment-booking-app" data-location-id="0" data-service-id="0" data-staff-id="0"></div><pre id="test-result">RUNNING</pre>
+<script>
+window.pxAppointmentPublic={root:'/mock/',nonce:''};
+const result=document.getElementById('test-result');
+window.addEventListener('error',e=>{result.dataset.error=e.message; result.textContent='FAIL '+e.message});
+window.addEventListener('unhandledrejection',e=>{result.dataset.error=String(e.reason);});
+const created={appointment:{id:1,status:'approved'},customer_appointment:{token:'0123456789abcdef0123456789abcdef'},payments:[{status:'completed',amount:45}],amount:45};
+window.fetch=async function(url,options){
+ const path=String(url).replace('/mock/','').split('?')[0];
+ const data={config:{currency:'USD',local_enabled:true},locations:[{id:1,name:'Test venue'}],services:{services:[{id:1,name:'Test service',duration_sec:1800,price:50}],categories:[]},staff:[{id:1,full_name:'Test staff',override_price:45}],extras:[], 'custom-fields':[],availability:[{staff_id:1,start:'2026-12-01 09:00:00',display:'09:00'}],appointments:created}[path];
+ if(data===undefined) throw new Error('Unexpected request '+path);
+ return new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
+};
+async function waitFor(test){for(let n=0;n<100;n++){if(test())return;await new Promise(r=>setTimeout(r,30))}throw new Error('Timed out: '+test)}
+function click(text){const button=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes(text));if(!button)throw new Error('Missing button '+text);button.click()}
+function field(placeholder,value){const el=document.querySelector('input[placeholder="'+placeholder+'"]');el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}))}
+window.addEventListener('load',async()=>{
+ try {
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Choose a location');click('Test venue');
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Choose a service');click('Test service');
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Choose staff');click('Any staff');
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Date and time');click('09:00');
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Your details');field('Full name','Test Customer');field('Email','test@example.test');
+ document.querySelector('form').requestSubmit();
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Payment');
+ if(!document.body.textContent.includes('45.00'))throw new Error('Price override was not displayed');click('Pay at location');
+ await waitFor(()=>document.querySelector('h3')?.textContent==='Booking received');
+ result.textContent='PASS public booking UI: location, service, any staff, time, validated details, price override, local payment, confirmation';
+ }catch(e){result.textContent='FAIL '+(result.dataset.error || e.message)}
+});
+</script><script src="../lib/public/public.js" defer></script></body></html>
