@@ -1,0 +1,189 @@
+<script setup>
+import { ref } from 'vue'
+import { api } from '../api'
+
+const busy = ref('')
+const message = ref('')
+const error = ref('')
+const importFile = ref(null)
+
+function clearStatus() {
+  message.value = ''
+  error.value = ''
+}
+
+async function resetDb() {
+  if (
+    !window.confirm(
+      'Reset the database? All locations, services, staff, customers, appointments, extras, coupons, and custom fields will be emptied. Notification templates are kept.',
+    )
+  ) {
+    return
+  }
+  busy.value = 'reset'
+  clearStatus()
+  try {
+    await api('admin/database/reset', { method: 'POST', body: {} })
+    message.value = 'Database reset. Booking data is empty. Notification templates were kept.'
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function insertDemo() {
+  if (
+    !window.confirm(
+      'Replace current booking data with demo content? Existing locations, services, staff, customers, and appointments will be cleared first. Notification templates are kept.',
+    )
+  ) {
+    return
+  }
+  busy.value = 'demo'
+  clearStatus()
+  try {
+    const res = await api('admin/database/demo', { method: 'POST', body: {} })
+    message.value =
+      'Demo content inserted: ' +
+      (res.appointments || 0) +
+      ' appointments, ' +
+      (res.services || 0) +
+      ' services, ' +
+      (res.categories || 0) +
+      ' categories, ' +
+      (res.staff || 0) +
+      ' staff, ' +
+      (res.locations || 0) +
+      ' locations, ' +
+      (res.extras || 0) +
+      ' extras, ' +
+      (res.coupons || 0) +
+      ' coupons, ' +
+      (res.custom_fields || 0) +
+      ' custom fields.'
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function exportCsv() {
+  busy.value = 'export'
+  clearStatus()
+  try {
+    const res = await api('admin/database/export', { method: 'POST', body: {} })
+    const blob = new Blob([res.csv || ''], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = res.filename || 'praxleo-booking.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    message.value = 'Export downloaded: ' + (res.filename || 'praxleo-booking.csv')
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    busy.value = ''
+  }
+}
+
+function onFile(ev) {
+  importFile.value = ev.target.files && ev.target.files[0] ? ev.target.files[0] : null
+}
+
+function summarizeCounts(counts) {
+  const keys = [
+    'locations',
+    'service_categories',
+    'services',
+    'staff',
+    'customers',
+    'appointments',
+    'extras',
+    'coupons',
+    'custom_fields',
+    'notifications',
+  ]
+  return keys
+    .filter((k) => counts[k])
+    .map((k) => counts[k] + ' ' + k.replace(/_/g, ' '))
+    .join(', ')
+}
+
+async function importCsv() {
+  if (!importFile.value) {
+    error.value = 'Choose a CSV file first.'
+    return
+  }
+  if (
+    !window.confirm(
+      'Import this CSV? Tables present in the file will replace existing rows. Use an export from Appointment Pro.',
+    )
+  ) {
+    return
+  }
+  busy.value = 'import'
+  clearStatus()
+  try {
+    const csv = await importFile.value.text()
+    const res = await api('admin/database/import', { method: 'POST', body: { csv } })
+    message.value = 'Import complete' + (res.counts ? ': ' + summarizeCounts(res.counts) : '.')
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    busy.value = ''
+  }
+}
+</script>
+<template>
+  <p v-if="error" class="px-error">{{ error }}</p>
+  <p v-if="message" class="px-success">{{ message }}</p>
+  <div class="px-card">
+    <h3>01. Reset Database</h3>
+    <p class="px-muted">
+      Removes all booking data (locations, services, categories, staff, customers, appointments,
+      extras, coupons, custom fields). Notification templates are not deleted.
+    </p>
+    <button class="px-button px-button-danger" :disabled="!!busy" @click="resetDb">
+      {{ busy === 'reset' ? 'Resetting...' : 'Reset Database' }}
+    </button>
+  </div>
+  <div class="px-card">
+    <h3>02. Insert Demo Content</h3>
+    <p class="px-muted">
+      Clears booking data, then inserts 3 locations, 5 categories, 10 services, 3 staff (with hours
+      and service links), 3 extras, 2 coupons (SAVE10, WELCOME20), 3 custom fields, 5 customers, and
+      5 appointments.
+    </p>
+    <button class="px-button" :disabled="!!busy" @click="insertDemo">
+      {{ busy === 'demo' ? 'Inserting...' : 'Insert Demo Content' }}
+    </button>
+  </div>
+  <div class="px-card">
+    <h3>03. Export CSV</h3>
+    <p class="px-muted">
+      Download all booking tables as one CSV so you can move data to another WordPress site. IDs and
+      links between staff, services, and appointments are kept.
+    </p>
+    <button class="px-button" :disabled="!!busy" @click="exportCsv">
+      {{ busy === 'export' ? 'Exporting...' : 'Export CSV' }}
+    </button>
+  </div>
+  <div class="px-card">
+    <h3>04. Import CSV</h3>
+    <p class="px-muted">
+      Upload a Appointment Pro export. Tables in the file replace current rows. Notification
+      templates are imported when present; missing events are seeded after import.
+    </p>
+    <div class="px-row">
+      <input type="file" accept=".csv,text/csv" :disabled="!!busy" @change="onFile" />
+      <button class="px-button" :disabled="!!busy || !importFile" @click="importCsv">
+        {{ busy === 'import' ? 'Importing...' : 'Import CSV' }}
+      </button>
+    </div>
+  </div>
+</template>
