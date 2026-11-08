@@ -3,7 +3,6 @@ import { createPinia } from "pinia";
 import { createRouter, createWebHashHistory } from "vue-router";
 import App from "./App.vue";
 import { useBooking } from "./store";
-import Location from "./views/Location.vue";
 import Service from "./views/Service.vue";
 import Staff from "./views/Staff.vue";
 import Time from "./views/Time.vue";
@@ -14,8 +13,8 @@ import Done from "./views/Done.vue";
 import "./styles.css";
 
 const routes = [
-  { path: "/", redirect: "/location" },
-  { path: "/location", name: "location", component: Location },
+  { path: "/", redirect: "/service" },
+  { path: "/location", redirect: "/service" },
   { path: "/service", name: "service", component: Service },
   { path: "/staff", name: "staff", component: Staff },
   { path: "/time", name: "time", component: Time },
@@ -36,19 +35,9 @@ async function mountBooking() {
   const pinia = createPinia();
   app.use(pinia);
   const store = useBooking(pinia);
-  try {
-    await store.boot({
-      location_id: Number(el.dataset.locationId || 0),
-      service_id: Number(el.dataset.serviceId || 0),
-      staff_id: Number(el.dataset.staffId || 0),
-    });
-  } catch (e) {
-    store.error = e.message;
-  }
   router.beforeEach((to) => {
-    if (to.path !== "/location" && !store.location) return "/location";
-    if (!["/location", "/service"].includes(to.path) && !store.service)
-      return "/service";
+    if (to.path !== "/service" && !store.service) return "/service";
+    if (to.path !== "/service" && !store.location) return "/service";
     if (
       ["/details", "/extras", "/payment", "/done"].includes(to.path) &&
       !store.slot
@@ -59,6 +48,11 @@ async function mountBooking() {
   app.use(router);
   await router.isReady();
   app.mount(el);
+  await store.boot({
+    location_id: Number(el.dataset.locationId || 0),
+    service_id: Number(el.dataset.serviceId || 0),
+    staff_id: Number(el.dataset.staffId || 0),
+  });
 }
 
 if (document.readyState === "loading") {
