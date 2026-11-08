@@ -1,0 +1,103 @@
+.px-appointment-booking {
+  font-family: Inter, system-ui, sans-serif;
+  color: #1e1e1e;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.px-appointment-booking * {
+  box-sizing: border-box;
+}
+.pxb-steps {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.pxb-steps span {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #dee2e6;
+  color: #4b5563;
+}
+.pxb-steps span.on {
+  background: #0d6efd;
+  color: #fff;
+}
+.pxb-card {
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fff;
+}
+.pxb-choice {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0 0 8px;
+  padding: 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.pxb-choice:hover,
+.pxb-choice.sel {
+  border-color: #0d6efd;
+  background: #f0f6ff;
+}
+.pxb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+.pxb-slot {
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.pxb-slot:hover {
+  border-color: #0d6efd;
+}
+.pxb-form {
+  display: grid;
+  gap: 8px;
+}
+.pxb-form input,
+.pxb-form textarea,
+.pxb-form select {
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font: inherit;
+}
+.pxb-btn {
+  background: #0d6efd;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.pxb-btn.ghost {
+  background: #fff;
+  color: #1e1e1e;
+  border: 1px solid #d1d5db;
+}
+.pxb-err {
+  color: #f70063;
+}
+.pxb-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+.pxb-cat {
+  margin: 16px 0 8px;
+  font-size: 14px;
+  color: #0d6efd;
+}
