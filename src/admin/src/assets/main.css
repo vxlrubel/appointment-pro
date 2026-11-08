@@ -225,3 +225,70 @@ header.px-header {
 
 
 .px-success { color: var(--px-done-color); font-weight: 600; }
+
+/* Loading placeholders mirror the admin cards without showing empty data. */
+.px-sr-only {
+ position: absolute;
+ width: 1px;
+ height: 1px;
+ padding: 0;
+ margin: -1px;
+ overflow: hidden;
+ clip: rect(0, 0, 0, 0);
+ white-space: nowrap;
+ border: 0;
+}
+
+.px-loading-skeleton { width: 100%; }
+.px-skeleton {
+ display: block;
+ position: relative;
+ overflow: hidden;
+ background: #edf0f4;
+ border-radius: 4px;
+}
+.px-skeleton::after {
+ content: '';
+ position: absolute;
+ inset: 0;
+ background: linear-gradient(100deg, transparent 15%, rgba(255, 255, 255, 0.7) 50%, transparent 85%);
+ transform: translateX(-100%);
+ animation: px-skeleton-shimmer 1.7s ease-in-out infinite;
+}
+.px-skeleton-label { width: 58%; max-width: 110px; height: 12px; }
+.px-skeleton-stat { min-height: 95px; box-sizing: border-box; }
+.px-skeleton-stat .px-skeleton-label { margin-bottom: 18px; }
+.px-skeleton-value { width: 42%; max-width: 92px; height: 28px; }
+.px-skeleton-heading { width: 120px; height: 18px; margin: 0 0 16px; }
+.px-skeleton-table { overflow: hidden; }
+.px-skeleton-table-row {
+ display: grid;
+ grid-template-columns: repeat(var(--px-skeleton-columns, 4), minmax(0, 1fr));
+ align-items: center;
+ gap: 20px;
+ min-height: 41px;
+ padding: 0 8px;
+ border-bottom: 1px solid var(--px-line);
+}
+.px-skeleton-table-head { min-height: 38px; }
+.px-skeleton-cell { width: 85%; height: 13px; }
+.px-skeleton-cell-short { width: 55%; }
+.px-skeleton-field { padding-bottom: 12px; }
+.px-skeleton-input { width: 100%; height: 34px; }
+.px-skeleton-button { width: 112px; height: 34px; margin-top: 16px; }
+.px-skeleton-calendar { display: grid; grid-template-columns: repeat(7, minmax(90px, 1fr)); gap: 16px; overflow: hidden; }
+.px-skeleton-day { min-height: 160px; }
+.px-skeleton-day .px-skeleton-label { width: 70%; margin-bottom: 24px; }
+.px-skeleton-event { width: 100%; height: 26px; margin-bottom: 12px; }
+
+@keyframes px-skeleton-shimmer {
+ to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .px-skeleton::after { animation: none; display: none; }
+}
+
+@media (max-width: 600px) {
+ .px-skeleton-table-row { gap: 10px; }
+}
