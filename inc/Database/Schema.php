@@ -17,7 +17,7 @@ class Schema {
 	/**
 	 * Current database version.
 	 */
-	public const DB_VERSION = '1.0.0';
+	public const DB_VERSION = '1.1.0';
 
 	/**
 	 * Return a prefixed table name.
@@ -168,6 +168,7 @@ class Schema {
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			appointment_id bigint(20) unsigned NOT NULL,
 			customer_id bigint(20) unsigned NOT NULL,
+			amount decimal(12,2) NULL,
 			number_of_persons int(11) NOT NULL DEFAULT 1,
 			extras_json longtext NULL,
 			custom_fields_json longtext NULL,
