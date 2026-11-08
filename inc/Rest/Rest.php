@@ -33,173 +33,119 @@ class Rest {
 	 *
 	 * @return void
 	 */
-	public function register(): void {
-		$admin = array( $this, 'admin_perm' );
+	public function register() {
+		$pub  = array( $this, 'public_perm' );
+		$adm  = array( $this, 'admin_perm' );
 
-		$this->crud( 'locations', 'locations', $admin );
-		$this->crud( 'services', 'services', $admin );
-		$this->crud( 'categories', 'service_categories', $admin );
-		$this->crud( 'staff', 'staff', $admin );
-		$this->crud( 'extras', 'extras', $admin );
-		$this->crud( 'coupons', 'coupons', $admin );
-		$this->crud( 'customers', 'customers', $admin );
-		$this->crud( 'custom-fields', 'custom_fields', $admin );
-		$this->crud( 'notifications', 'notifications', $admin );
+		$this->crud( 'locations', 'locations', $adm );
+		$this->crud( 'services', 'services', $adm );
+		$this->crud( 'categories', 'service_categories', $adm );
+		$this->crud( 'staff', 'staff', $adm );
+		$this->crud( 'extras', 'extras', $adm );
+		$this->crud( 'coupons', 'coupons', $adm );
+		$this->crud( 'customers', 'customers', $adm );
+		$this->crud( 'custom-fields', 'custom_fields', $adm );
+		$this->crud( 'notifications', 'notifications', $adm, false );
 
-		register_rest_route(
-			self::NS,
-			'/staff',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'candidate_staff' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/availability',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'availability' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/appointments',
-			array(
-				array(
-					'methods'             => 'GET',
-					'callback'            => array( $this, 'list_appointments' ),
-					'permission_callback' => $admin,
-				),
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( $this, 'create_appointment' ),
-					'permission_callback' => $admin,
-				),
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/appointments/(?P<id>\d+)',
-			array(
-				'methods'             => 'PATCH',
-				'callback'            => array( $this, 'patch_appointment' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/payments',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'list_payments' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/payments/local',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( $this, 'pay_local' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/settings',
-			array(
-				array(
-					'methods'             => 'GET',
-					'callback'            => array( $this, 'get_settings' ),
-					'permission_callback' => $admin,
-				),
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( $this, 'save_settings' ),
-					'permission_callback' => $admin,
-				),
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/dashboard',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( $this, 'dashboard' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/staff/(?P<id>\d+)/schedule',
-			array(
-				array(
-					'methods'             => 'GET',
-					'callback'            => array( $this, 'get_schedule' ),
-					'permission_callback' => $admin,
-				),
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( $this, 'save_schedule' ),
-					'permission_callback' => $admin,
-				),
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/staff/(?P<id>\d+)/days-off',
-			array(
-				array(
-					'methods'             => 'GET',
-					'callback'            => array( $this, 'get_days_off' ),
-					'permission_callback' => $admin,
-				),
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( $this, 'add_day_off' ),
-					'permission_callback' => $admin,
-				),
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/staff-days-off/(?P<id>\d+)',
-			array(
-				'methods'             => 'DELETE',
-				'callback'            => array( $this, 'delete_day_off' ),
-				'permission_callback' => $admin,
-			)
-		);
-
-		register_rest_route(
-			self::NS,
-			'/staff/(?P<id>\d+)/services',
-			array(
-				array(
-					'methods'             => 'GET',
-					'callback'            => array( $this, 'get_staff_services' ),
-					'permission_callback' => $admin,
-				),
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( $this, 'save_staff_services' ),
-					'permission_callback' => $admin,
-				),
-			)
-		);
+		register_rest_route( self::NS, '/locations', array(
+			'methods' => 'GET', 'callback' => array( $this, 'public_locations' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/services', array(
+			'methods' => 'GET', 'callback' => array( $this, 'public_services' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/staff', array(
+			'methods' => 'GET', 'callback' => array( $this, 'public_staff' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/availability', array(
+			'methods' => 'GET', 'callback' => array( $this, 'availability' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/extras', array(
+			'methods' => 'GET', 'callback' => array( $this, 'public_extras' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/custom-fields', array(
+			'methods' => 'GET', 'callback' => array( $this, 'public_fields' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/coupons/validate', array(
+			'methods' => 'POST', 'callback' => array( $this, 'validate_coupon' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/appointments', array(
+			array( 'methods' => 'POST', 'callback' => array( $this, 'create_appointment' ), 'permission_callback' => $pub ),
+			array( 'methods' => 'GET', 'callback' => array( $this, 'list_appointments' ), 'permission_callback' => $adm ),
+		) );
+		register_rest_route( self::NS, '/appointments/(?P<id>\d+)', array(
+			array( 'methods' => 'PATCH', 'callback' => array( $this, 'patch_appointment' ), 'permission_callback' => $adm ),
+			array( 'methods' => 'DELETE', 'callback' => array( $this, 'delete_appointment' ), 'permission_callback' => $adm ),
+		) );
+		register_rest_route( self::NS, '/appointments/bulk-delete', array(
+			'methods' => 'POST', 'callback' => array( $this, 'bulk_delete_appointments' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/appointments/(?P<token>[a-f0-9]{32})', array(
+			'methods' => 'GET', 'callback' => array( $this, 'get_by_token' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/appointments/(?P<token>[a-f0-9]{32})/cancel', array(
+			'methods' => 'POST', 'callback' => array( $this, 'cancel_by_token' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/payments/local', array(
+			'methods' => 'POST', 'callback' => array( $this, 'pay_local' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/payments/stripe/intent', array(
+			'methods' => 'POST', 'callback' => array( $this, 'stripe_intent' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/payments/paypal/order', array(
+			'methods' => 'POST', 'callback' => array( $this, 'paypal_order' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/payments/paypal/capture', array(
+			'methods' => 'POST', 'callback' => array( $this, 'paypal_capture' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/payments/woocommerce/order', array(
+			'methods' => 'POST', 'callback' => array( $this, 'woo_order' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/webhooks/stripe', array(
+			'methods' => 'POST', 'callback' => array( $this, 'stripe_hook' ), 'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NS, '/webhooks/paypal', array(
+			'methods' => 'POST', 'callback' => array( $this, 'paypal_hook' ), 'permission_callback' => '__return_true',
+		) );
+		register_rest_route( self::NS, '/settings', array(
+			array( 'methods' => 'GET', 'callback' => array( $this, 'get_settings' ), 'permission_callback' => $adm ),
+			array( 'methods' => 'POST', 'callback' => array( $this, 'save_settings' ), 'permission_callback' => $adm ),
+		) );
+		register_rest_route( self::NS, '/dashboard', array(
+			'methods' => 'GET', 'callback' => array( $this, 'dashboard' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/staff/(?P<id>\d+)/schedule', array(
+			array( 'methods' => 'GET', 'callback' => array( $this, 'get_schedule' ), 'permission_callback' => $adm ),
+			array( 'methods' => 'POST', 'callback' => array( $this, 'save_schedule' ), 'permission_callback' => $adm ),
+		) );
+		register_rest_route( self::NS, '/staff/(?P<id>\d+)/days-off', array(
+			array( 'methods' => 'GET', 'callback' => array( $this, 'get_days_off' ), 'permission_callback' => $adm ),
+			array( 'methods' => 'POST', 'callback' => array( $this, 'add_day_off' ), 'permission_callback' => $adm ),
+		) );
+		register_rest_route( self::NS, '/staff-days-off/(?P<id>\d+)', array(
+			'methods' => 'DELETE', 'callback' => array( $this, 'delete_day_off' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/staff/(?P<id>\d+)/services', array(
+			array( 'methods' => 'GET', 'callback' => array( $this, 'get_staff_services' ), 'permission_callback' => $adm ),
+			array( 'methods' => 'POST', 'callback' => array( $this, 'save_staff_services' ), 'permission_callback' => $adm ),
+		) );
+		register_rest_route( self::NS, '/payments', array(
+			'methods' => 'GET', 'callback' => array( $this, 'list_payments' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/config', array(
+			'methods' => 'GET', 'callback' => array( $this, 'public_config' ), 'permission_callback' => $pub,
+		) );
+		register_rest_route( self::NS, '/admin/database/reset', array(
+			'methods' => 'POST', 'callback' => array( $this, 'reset_database' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/admin/database/demo', array(
+			'methods' => 'POST', 'callback' => array( $this, 'insert_demo' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/admin/database/export', array(
+			'methods' => 'POST', 'callback' => array( $this, 'export_database' ), 'permission_callback' => $adm,
+		) );
+		register_rest_route( self::NS, '/admin/database/import', array(
+			'methods' => 'POST', 'callback' => array( $this, 'import_database' ), 'permission_callback' => $adm,
+		) );
 	}
 
 	/**
@@ -219,7 +165,7 @@ class Rest {
 	 * @param callable $permission Permission callback.
 	 * @return void
 	 */
-	private function crud( string $route, string $table, callable $permission ): void {
+	private function crud( string $route, string $table, callable $permission, bool $allow_delete = true ): void {
 		register_rest_route(
 			self::NS,
 			"/admin/$route",
@@ -253,6 +199,18 @@ class Rest {
 			)
 		);
 
+		if ( $allow_delete ) {
+			register_rest_route( self::NS, "/admin/$route/bulk-delete", array(
+				'methods' => 'POST', 'permission_callback' => $permission,
+				'callback' => function ( $request ) use ( $table ) {
+					foreach ( array_unique( array_map( 'absint', (array) ( $this->json_body( $request )['ids'] ?? array() ) ) ) as $id ) {
+						if ( $id ) { Repository::delete( $table, array( 'id' => $id ) ); }
+					}
+					return rest_ensure_response( array( 'ok' => true ) );
+				},
+			) );
+		}
+
 		register_rest_route(
 			self::NS,
 			"/admin/$route/(?P<id>\\d+)",
@@ -280,7 +238,8 @@ class Rest {
 				),
 				array(
 					'methods'             => 'DELETE',
-					'callback'            => function ( $request ) use ( $table ) {
+					'callback'            => function ( $request ) use ( $table, $allow_delete ) {
+						if ( ! $allow_delete ) { return new WP_Error( 'forbidden', 'Notification templates cannot be deleted.', array( 'status' => 403 ) ); }
 						Repository::delete( $table, array( 'id' => (int) $request['id'] ) );
 
 						return rest_ensure_response( array( 'ok' => true ) );
@@ -350,6 +309,8 @@ class Rest {
 				} else {
 					$out[ $key ] = (int) $value;
 				}
+			} elseif ( in_array( $key, array( 'start_date', 'end_date' ), true ) && ( '' === $value || null === $value ) ) {
+				$out[ $key ] = null;
 			} elseif ( in_array( $key, $floats, true ) ) {
 				$out[ $key ] = ( '' === $value || null === $value ) ? 0 : (float) $value;
 			} else {
@@ -430,6 +391,8 @@ class Rest {
 	 */
 	public function create_appointment( $request ) {
 		$payload = $this->json_body( $request );
+		$method = $payload['payment_method'] ?? '';
+		if ( ! current_user_can( 'manage_options' ) && ( ! in_array( $method, array( 'local', 'stripe', 'paypal', 'woocommerce' ), true ) || ! Settings::get( $method . '_enabled' ) ) ) { return new WP_Error( 'disabled', 'Payment method unavailable.', array( 'status' => 400 ) ); }
 
 		if ( empty( $payload['idempotency_key'] ) ) {
 			$payload['idempotency_key'] = $request->get_header( 'Idempotency-Key' );
@@ -504,6 +467,7 @@ class Rest {
 	 * @return \WP_REST_Response|WP_Error
 	 */
 	public function pay_local( $request ) {
+		if ( ! current_user_can( 'manage_options' ) && ! Settings::get( 'local_enabled' ) ) { return new WP_Error( 'disabled', 'Payment method unavailable.', array( 'status' => 400 ) ); }
 		try {
 			$hydrated = $this->load_appointment_amount( $request );
 
@@ -539,7 +503,7 @@ class Rest {
 			return new WP_Error( 'not_found', __( 'Appointment not found.', 'appointment-pro' ), array( 'status' => 404 ) );
 		}
 
-		$hydrated['amount'] = (float) ( $payload['amount'] ?? 0 );
+		if ( ! current_user_can( 'manage_options' ) && ! hash_equals( (string) ( $hydrated['customer_appointment']['token'] ?? '' ), (string) ( $payload['token'] ?? '' ) ) ) { return new WP_Error( 'forbidden', 'Invalid booking token.', array( 'status' => 403 ) ); }
 
 		return $hydrated;
 	}
@@ -614,11 +578,10 @@ class Rest {
 	 * @return \WP_REST_Response
 	 */
 	public function get_schedule( $request ) {
-		return rest_ensure_response(
-			Repository::all( 'staff_schedule', array( 'staff_id' => (int) $request['id'] ) )
-		);
+		$rows = Repository::all( 'staff_schedule', array( 'staff_id' => (int) $request['id'] ) );
+		foreach ( $rows as &$row ) { $row['breaks'] = Repository::all( 'staff_breaks', array( 'schedule_id' => (int) $row['id'] ) ); }
+		return rest_ensure_response( $rows );
 	}
-
 	/**
 	 * Replace a staff member's weekly schedule.
 	 *
@@ -629,6 +592,7 @@ class Rest {
 		$staff_id = (int) $request['id'];
 		$rows     = $request->get_json_params();
 
+		foreach ( Repository::all( 'staff_schedule', array( 'staff_id' => $staff_id ) ) as $old ) { Repository::delete( 'staff_breaks', array( 'schedule_id' => (int) $old['id'] ) ); }
 		Repository::delete( 'staff_schedule', array( 'staff_id' => $staff_id ) );
 
 		foreach ( (array) $rows as $row ) {
@@ -655,9 +619,7 @@ class Rest {
 			}
 		}
 
-		return rest_ensure_response(
-			Repository::all( 'staff_schedule', array( 'staff_id' => $staff_id ) )
-		);
+		return $this->get_schedule( $request );
 	}
 
 	/**
@@ -776,5 +738,177 @@ class Rest {
 		$payload = $request->get_json_params();
 
 		return rest_ensure_response( Settings::save( is_array( $payload ) ? $payload : array() ) );
+	}
+
+	public function public_perm() {
+		return true;
+	}
+
+	public function public_config() {
+		return rest_ensure_response( \Praxleo\Appointment\Domain\Settings::public_subset() );
+	}
+
+	public function reset_database() {
+		return rest_ensure_response( \Praxleo\Appointment\Database\Demo::reset() );
+	}
+
+	public function insert_demo() {
+		$res = \Praxleo\Appointment\Database\Demo::insert();
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return rest_ensure_response( $res );
+	}
+
+	public function export_database() {
+		return rest_ensure_response( \Praxleo\Appointment\Database\Transfer::export() );
+	}
+
+	public function import_database( $req ) {
+		$p   = $this->json_body( $req );
+		$csv = isset( $p['csv'] ) ? (string) $p['csv'] : '';
+		$res = \Praxleo\Appointment\Database\Transfer::import( $csv );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return rest_ensure_response( $res );
+	}
+
+	public function public_locations() {
+		return rest_ensure_response( \Praxleo\Appointment\Database\Repository::all( 'locations', array( 'enabled' => 1 ), 'position ASC, id ASC' ) );
+	}
+
+	public function public_services( $req ) {
+		$location_id = (int) $req->get_param( 'location_id' );
+		$services    = \Praxleo\Appointment\Database\Repository::all( 'services', array( 'enabled' => 1 ), 'position ASC, id ASC' );
+		$cats        = \Praxleo\Appointment\Database\Repository::all( 'service_categories', array(), 'position ASC, id ASC' );
+		if ( $location_id ) {
+			global $wpdb;
+			$ss  = \Praxleo\Appointment\Database\Schema::table( 'staff_services' );
+			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT service_id FROM $ss WHERE location_id = %d AND enabled = 1", $location_id ) );
+			$services = array_values( array_filter( $services, static function ( $s ) use ( $ids ) {
+				return in_array( (string) $s['id'], $ids, true ) || in_array( (int) $s['id'], array_map( 'intval', $ids ), true );
+			} ) );
+		}
+		return rest_ensure_response( array( 'services' => $services, 'categories' => $cats ) );
+	}
+
+	public function public_staff( $req ) {
+		$location_id = (int) $req->get_param( 'location_id' );
+		$service_id  = (int) $req->get_param( 'service_id' );
+		$rows        = \Praxleo\Appointment\Domain\Availability::candidate_staff( $location_id, $service_id, 0 );
+		return rest_ensure_response( $rows );
+	}
+
+	public function public_extras( $req ) {
+		$sid = (int) $req->get_param( 'service_id' );
+		return rest_ensure_response( \Praxleo\Appointment\Database\Repository::all( 'extras', array( 'service_id' => $sid, 'enabled' => 1 ), 'position ASC' ) );
+	}
+
+	public function public_fields( $req ) {
+		$sid   = (int) $req->get_param( 'service_id' );
+		$all   = \Praxleo\Appointment\Database\Repository::all( 'custom_fields', array( 'enabled' => 1 ), 'position ASC' );
+		$out   = array();
+		foreach ( $all as $f ) {
+			$services = json_decode( $f['services_json'] ?: '[]', true );
+			if ( ! $services || in_array( $sid, array_map( 'intval', $services ), true ) ) {
+				$out[] = $f;
+			}
+		}
+		return rest_ensure_response( $out );
+	}
+
+	public function validate_coupon( $req ) {
+		$p   = $req->get_json_params();
+		$res = \Praxleo\Appointment\Domain\Coupons::validate( $p['code'] ?? '', (int) ( $p['service_id'] ?? 0 ), (float) ( $p['amount'] ?? 0 ) );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+		return rest_ensure_response( $res );
+	}
+
+	public function delete_appointment( $req ) {
+		\Praxleo\Appointment\Domain\Appointments::delete( (int) $req['id'] );
+		return rest_ensure_response( array( 'ok' => true ) );
+	}
+
+	public function bulk_delete_appointments( $req ) {
+		$p   = $this->json_body( $req );
+		$ids = isset( $p['ids'] ) ? (array) $p['ids'] : array();
+		$n   = 0;
+		foreach ( $ids as $id ) {
+			$id = (int) $id;
+			if ( $id ) {
+				\Praxleo\Appointment\Domain\Appointments::delete( $id );
+				$n++;
+			}
+		}
+		return rest_ensure_response( array( 'ok' => true, 'deleted' => $n ) );
+	}
+
+	public function get_by_token( $req ) {
+		$row = \Praxleo\Appointment\Domain\Appointments::by_token( $req['token'] );
+		if ( ! $row ) {
+			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
+		}
+		return rest_ensure_response( $row );
+	}
+
+	public function cancel_by_token( $req ) {
+		$row = \Praxleo\Appointment\Domain\Appointments::by_token( $req['token'] );
+		if ( ! $row ) {
+			return new WP_Error( 'not_found', 'Not found', array( 'status' => 404 ) );
+		}
+		return rest_ensure_response( \Praxleo\Appointment\Domain\Appointments::set_status( $row['appointment']['id'], 'cancelled' ) );
+	}
+
+
+	public function stripe_intent( $req ) {
+		if ( ! current_user_can( 'manage_options' ) && ! Settings::get( 'stripe_enabled' ) ) { return new WP_Error( 'disabled', 'Payment method unavailable.', array( 'status' => 400 ) ); }
+		$hydr = $this->load_appointment_amount( $req );
+		if ( is_wp_error( $hydr ) ) {
+			return $hydr;
+		}
+		$res = \Praxleo\Appointment\Payments\Payments::stripe_intent( $hydr, $hydr['amount'] );
+		return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
+	}
+
+	public function paypal_order( $req ) {
+		if ( ! current_user_can( 'manage_options' ) && ! Settings::get( 'paypal_enabled' ) ) { return new WP_Error( 'disabled', 'Payment method unavailable.', array( 'status' => 400 ) ); }
+		$hydr = $this->load_appointment_amount( $req );
+		if ( is_wp_error( $hydr ) ) {
+			return $hydr;
+		}
+		$res = \Praxleo\Appointment\Payments\Payments::paypal_order( $hydr, $hydr['amount'] );
+		return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
+	}
+
+	public function paypal_capture( $req ) {
+		$hydrated = $this->load_appointment_amount( $req );
+		if ( is_wp_error( $hydrated ) ) { return $hydrated; }
+		$order_id = sanitize_text_field( $this->json_body( $req )['order_id'] ?? '' );
+		$matches = array_filter( $hydrated['payments'], static function ( $payment ) use ( $order_id ) { return $payment['type'] === 'paypal' && ( json_decode( $payment['details_json'] ?: '{}', true )['order_id'] ?? '' ) === $order_id; } );
+		if ( ! $order_id || ! $matches ) { return new WP_Error( 'invalid', 'Invalid payment order.', array( 'status' => 400 ) ); }
+		$res = Payments::paypal_capture( $order_id );
+		return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
+	}
+	public function woo_order( $req ) {
+		if ( ! current_user_can( 'manage_options' ) && ! Settings::get( 'woocommerce_enabled' ) ) { return new WP_Error( 'disabled', 'Payment method unavailable.', array( 'status' => 400 ) ); }
+		$hydr = $this->load_appointment_amount( $req );
+		if ( is_wp_error( $hydr ) ) {
+			return $hydr;
+		}
+		$res = \Praxleo\Appointment\Payments\Payments::woo_order( $hydr, $hydr['amount'] );
+		return is_wp_error( $res ) ? $res : rest_ensure_response( $res );
+	}
+
+	public function stripe_hook( $req ) {
+		$res = \Praxleo\Appointment\Payments\Payments::handle_stripe_webhook( $req->get_body(), $req->get_header( 'stripe-signature' ) );
+		return is_wp_error( $res ) ? $res : rest_ensure_response( array( 'ok' => true ) );
+	}
+
+	public function paypal_hook( $req ) {
+		$res = \Praxleo\Appointment\Payments\Payments::handle_paypal_webhook( $req->get_body(), array_combine( array( 'auth_algo', 'cert_url', 'transmission_id', 'transmission_sig', 'transmission_time' ), array_map( static fn( $key ) => $req->get_header( 'paypal-' . str_replace( '_', '-', $key ) ), array( 'auth_algo', 'cert_url', 'transmission_id', 'transmission_sig', 'transmission_time' ) ) ) );
+		return is_wp_error( $res ) ? $res : rest_ensure_response( array( 'ok' => true ) );
 	}
 }
