@@ -70,6 +70,17 @@ try {
  request('POST',"staff/$id/schedule",$shift);
  check(count(R::all('staff_breaks', ['schedule_id'=>$schedule[0]['id']])) === 0, 'Schedule replacement removes old breaks');
  request('POST',"staff/$id/services",[['service_id'=>$service['id'],'location_id'=>$location['id'],'price'=>45]]);
+ $catalog = request('GET','services')->get_data();
+ $catalog_service = array_values(array_filter($catalog['services'],fn($row)=>(int)$row['id']===(int)$service['id']))[0];
+ check($catalog_service['location_ids'] === [(int)$location['id']], 'Public catalog exposes valid service locations');
+ R::update('staff',['enabled'=>0],['id'=>$id]);
+ $catalog = request('GET','services')->get_data();
+ $catalog_service = array_values(array_filter($catalog['services'],fn($row)=>(int)$row['id']===(int)$service['id']))[0];
+ check($catalog_service['location_ids'] === [], 'Disabled staff do not make service locations bookable');
+ R::update('staff',['enabled'=>1],['id'=>$id]);
+ $filtered = new WP_REST_Request('GET','/px-appointment/v1/services');
+ $filtered->set_query_params(['location_id'=>$location['id']]);
+ check(count(rest_do_request($filtered)->get_data()['services'])===1, 'Location service API filtering remains supported');
  $query = http_build_query(['location_id'=>$location['id'],'service_id'=>$service['id'],'staff_id'=>$id,'date'=>$date]);
  // REST dispatch accepts query parameters through set_query_params.
  $slot_request = new WP_REST_Request('GET','/px-appointment/v1/availability');
@@ -77,6 +88,27 @@ try {
  wp_set_current_user(0);
  $slots = rest_do_request($slot_request)->get_data();
  check(count($slots)>0, 'Guest availability returns slots');
+ $month_request = new WP_REST_Request('GET','/px-appointment/v1/availability/dates');
+ $month_args = ['location_id'=>$location['id'],'service_id'=>$service['id'],'staff_id'=>$id,'month'=>substr($date,0,7)];
+ $month_request->set_query_params($month_args);
+ $month_data = rest_do_request($month_request)->get_data();
+ check(($month_data['dates'][$date] ?? -1)===count($slots), 'Monthly calendar counts match actual availability');
+ $off_date=$day->modify('+1 day')->format('Y-m-d');
+ if(substr($off_date,0,7)===substr($date,0,7))check($month_data['dates'][$off_date]===0,'Calendar disables dates without scheduled hours');
+ $invalid_month = new WP_REST_Request('GET','/px-appointment/v1/availability/dates');
+ $invalid_month->set_query_params($month_args+[]);$invalid_month->set_param('month','2026-13');
+ check(rest_do_request($invalid_month)->get_status()===400,'Calendar rejects invalid months');
+ $leap_month = new WP_REST_Request('GET','/px-appointment/v1/availability/dates');
+ $leap_month->set_query_params(array_merge($month_args,['month'=>'2028-02']));
+ check(count(rest_do_request($leap_month)->get_data()['dates'])===29,'Calendar includes leap-year dates');
+ $extra_id=R::insert('extras',['service_id'=>$service['id'],'title'=>'Long add-on','duration_sec'=>28800,'price'=>0,'max_quantity'=>1,'enabled'=>1]);
+ $extras_month = new WP_REST_Request('GET','/px-appointment/v1/availability/dates');
+ $extras_month->set_query_params($month_args+['extras'=>wp_json_encode([['id'=>$extra_id,'qty'=>1]])]);
+ check(rest_do_request($extras_month)->get_data()['dates'][$date]===0,'Calendar availability includes extra duration');
+ Settings::save(['max_lead_days'=>1]);
+ check(rest_do_request($month_request)->get_data()['dates'][$date]===0,'Calendar disables dates outside booking horizon');
+ Settings::save(['max_lead_days'=>60]);
+
  check(!array_filter($slots, fn($s)=>substr($s['start'],11,2)==='12'), 'Breaks block availability');
  $payload = ['location_id'=>$location['id'],'service_id'=>$service['id'],'staff_id'=>$id,'start'=>$slots[0]['start'],'customer'=>['full_name'=>'Test Customer','email'=>'booking-integration@example.test'],'payment_method'=>'local','idempotency_key'=>bin2hex(random_bytes(16))];
  check(request('POST','appointments',$payload)->get_status()===400, 'Required custom fields enforced');
@@ -87,6 +119,10 @@ try {
  check($booking_response->get_status()===200 && !empty($booking['appointment']['id']), 'Guest can book with local payment');
  check($booking['appointment']['status']==='approved' && (float)$booking['amount']===45.0, 'Staff price override and auto approval applied');
  check(count($booking['payments'])===1 && $booking['payments'][0]['status']==='completed', 'Local payment recorded exactly once');
+ R::update('staff_schedule',['end_time'=>'09:30:00'],['staff_id'=>$id]);
+ check(rest_do_request($month_request)->get_data()['dates'][$date]===0,'Calendar disables fully booked dates');
+ R::update('staff_schedule',['end_time'=>'17:00:00'],['staff_id'=>$id]);
+
  $repeat = request('POST','appointments',$payload)->get_data();
  check($repeat['appointment']['id']===$booking['appointment']['id'] && count($repeat['payments'])===1, 'Booking retry is idempotent');
  $token = $booking['customer_appointment']['token'];
@@ -100,6 +136,7 @@ try {
  wp_set_current_user($admin[0]->ID);
  $dayoff=request('POST',"staff/$id/days-off",['start_datetime'=>$date.' 00:00:00','end_datetime'=>$date.' 23:59:59','all_day'=>1,'reason'=>'Test leave'])->get_data();
  check(!empty($dayoff['id']) && count(rest_do_request($slot_request)->get_data())===0, 'Staff days off block availability');
+ check(rest_do_request($month_request)->get_data()['dates'][$date]===0,'Calendar disables staff days off');
  check(request('DELETE','staff-days-off/'.$dayoff['id'])->get_status()===200,'Staff day off can be removed');
  $newstart=$date.' 14:00:00';
  check(request('PATCH','appointments/'.$booking['appointment']['id'],['start'=>$newstart])->get_status()===200,'Admin rescheduling works');
