@@ -1,3 +1,95 @@
+
 :root{
 	--px-primary: #0d6efd;
+	--px-card: #fff;
+	--px-line: #dee2e6;
+	--px-color: #1e1e1e;
+	--px-approve-color: #2391FF;
+	--px-cancel-color: #F70063;
+	--px-done-color: #359FA0;
+}
+.mt-0{
+	margin-top: 0;
+}
+.mt-3{
+	margin-top: 1.225rem;
+}
+.p-3{
+	padding: 1.225rem;
+}
+.bg-white{
+	background: #fff;
+}
+.border{
+	border: 1px solid #dee2e6;
+}
+.fs-4{
+	font-size: 1.5rem;
+}
+.px-dynamic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.px-card {
+    background: var(--px-card);
+    border: 1px solid var(--px-line);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+.px-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.px-table th, .px-table td {
+    border-bottom: 1px solid var(--px-line);
+    padding: 8px;
+    text-align: left;
+}
+
+button.px-button-outline {
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 5px;
+    padding: 2px 5px;
+    box-sizing: border-box;
+    background: transparent;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--px-color);
+}
+button.px-button-outline.approve {
+    background: whtie;
+    border-color: var(--px-approve-color);
+    color: var(--px-approve-color);
+}
+button.px-button-outline.approve:hover {
+    background: var(--px-approve-color);
+    border-color: var(--px-approve-color) !important;
+    color: #fff;
+}
+button.px-button-outline.cancel {
+    background: whtie;
+    border-color: var(--px-cancel-color) !important;
+    color: var(--px-cancel-color);
+}
+button.px-button-outline.cancel:hover {
+    background: var(--px-cancel-color);
+    border-color: var(--px-cancel-color) !important;
+    color: #fff;
+}
+button.px-button-outline.done {
+    background: whtie;
+    border-color: var(--px-done-color) !important;
+    color: var(--px-done-color);
+}
+button.px-button-outline.done:hover {
+    background: var(--px-done-color);
+    border-color: var(--px-done-color) !important;
+    color: #fff;
 }

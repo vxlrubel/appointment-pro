@@ -1,6 +1,5 @@
 @import './base.css';
 
-
 header.px-header {
     background: #1e1e1e;
     padding: 20px 20px 25px;
@@ -13,11 +12,15 @@ header.px-header {
 	}
 }
 
+.px-page-title{
+	margin-top: 0;
+}
+
 .px-main{
 	--sidebar-width: 250px;
 	--content-width: calc(100% - var(--sidebar-width));
 	display: flex;
-
+	color: #1d2327;
 	.px-sidebar{
 		width: var(--sidebar-width);
 		background: #fff;

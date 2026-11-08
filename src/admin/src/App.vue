@@ -15,6 +15,9 @@ import { RouterLink, RouterView } from 'vue-router'
 				<RouterLink to="/appointment">Appointment</RouterLink>
 			</aside>
 			<div class="px-main-content">
+
+				<h2 class="px-page-title">Dashboard (dynamic title)</h2>
+
 				<RouterView />
 			</div>
 		</div>
