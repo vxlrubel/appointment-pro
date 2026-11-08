@@ -1,4 +1,4 @@
-﻿# Praxleo Appointment Pro
+# Praxleo Appointment Pro
 
 A WordPress appointment booking plugin with a Vue administration dashboard and a public booking wizard. PHP handles data storage, availability, notifications, and payment integrations; Vue handles the admin and customer interfaces.
 
@@ -170,6 +170,28 @@ Build outputs:
 - Editor: `lib/editor/booking-block.js` is a directly loaded WordPress script and does not require compilation.
 
 PHP files do not require compilation. Edit Vue/CSS source under `src/` and rebuild instead of editing generated bundles in `lib/admin` or `lib/public`.
+
+### Create an installable ZIP on Windows
+
+After installing dependencies with `npm ci` in `src/admin`, run this from the plugin root:
+
+```powershell
+.\create-plugin-zip.bat
+```
+
+The script runs `npm run build:all`, verifies the required runtime files, and writes:
+
+```text
+dist/px-appointment-pro-<version>.zip
+```
+
+The version comes from the `Version` header in `appointment-pro.php`. The archive contains a single `px-appointment-pro/` folder, ready for **WordPress > Plugins > Add New > Upload Plugin**. Rerunning it replaces the ZIP for the same version only after the new archive has been created and validated successfully.
+
+Included: the plugin entry point, uninstall handler, PHP classes under `inc/`, built runtime assets under `lib/`, available translation files, and the selected root documentation/license files.
+
+Excluded: Vue/TypeScript source, `node_modules`, tests, tools, reference plugin, Git/editor configuration, source maps, build configuration, Composer development files, and existing archives. The current plugin has no third-party production PHP packages, so the ZIP omits `vendor/` and uses the plugin's built-in autoloader. If production Composer dependencies are introduced, the script stops until packaging is updated to include them.
+
+The script requires Windows PowerShell, Node.js, npm, and the frontend dependencies already installed. It works when the plugin path contains spaces, stops on build/package errors, and does not create or modify WordPress booking data. Generated archives are ignored by Git.
 
 ### Deploying the plugin
 

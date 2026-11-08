@@ -1,1 +1,4 @@
 praxleo-booking
+
+# Generated production plugin archives.
+/dist/
