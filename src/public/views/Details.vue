@@ -1,4 +1,5 @@
 <script setup>
+import BookingSkeleton from "../components/BookingSkeleton.vue";
 import { useRouter } from "vue-router";
 import { useBooking } from "../store";
 const store = useBooking();
@@ -70,11 +71,18 @@ function next() {
         <button
           class="pxb-btn ghost"
           type="button"
+          :disabled="store.pending.coupon"
           @click="store.applyCoupon()"
         >
-          Apply
+          {{ store.pending.coupon ? "Applying..." : "Apply" }}
         </button>
       </div>
+      <BookingSkeleton
+        v-if="store.pending.coupon"
+        variant="form"
+        label="Checking coupon"
+        embedded
+      />
       <div class="pxb-bar">
         <button
           type="button"
@@ -83,7 +91,9 @@ function next() {
         >
           Back
         </button>
-        <button type="submit" class="pxb-btn">Continue</button>
+        <button type="submit" class="pxb-btn" :disabled="store.pending.coupon">
+          Continue
+        </button>
       </div>
     </form>
   </div>
