@@ -59,6 +59,9 @@ class Rest {
 		register_rest_route( self::NS, '/availability', array(
 			'methods' => 'GET', 'callback' => array( $this, 'availability' ), 'permission_callback' => $pub,
 		) );
+		register_rest_route( self::NS, '/availability/dates', array(
+			'methods' => 'GET', 'callback' => array( $this, 'availability_dates' ), 'permission_callback' => $pub,
+		) );
 		register_rest_route( self::NS, '/extras', array(
 			'methods' => 'GET', 'callback' => array( $this, 'public_extras' ), 'permission_callback' => $pub,
 		) );
@@ -774,23 +777,53 @@ class Rest {
 		return rest_ensure_response( $res );
 	}
 
+	/** Return actual slot counts for each date in a single calendar month. */
+	public function availability_dates( $request ) {
+		$timezone = \Praxleo\Appointment\Domain\Mailer::timezone();
+		$now = new \DateTimeImmutable( 'now', $timezone );
+		$month = (string) ( $request->get_param( 'month' ) ?: $now->format( 'Y-m' ) );
+		$start = \DateTimeImmutable::createFromFormat( '!Y-m', $month, $timezone );
+		if ( ! $start || $start->format( 'Y-m' ) !== $month ) {
+			return new WP_Error( 'invalid_month', 'Use a valid month in YYYY-MM format.', array( 'status' => 400 ) );
+		}
+		$minimum = $now->modify( '+' . max( 0, (int) Settings::get( 'min_lead_hours', 1 ) ) . ' hours' )->format( 'Y-m-d' );
+		$maximum = $now->modify( '+' . max( 0, (int) Settings::get( 'max_lead_days', 60 ) ) . ' days' )->format( 'Y-m-d' );
+		$extras = $request->get_param( 'extras' );
+		if ( is_string( $extras ) ) { $extras = json_decode( $extras, true ); }
+		$args = array( 'location_id' => absint( $request->get_param( 'location_id' ) ), 'service_id' => absint( $request->get_param( 'service_id' ) ), 'staff_id' => absint( $request->get_param( 'staff_id' ) ), 'extras' => is_array( $extras ) ? $extras : array() );
+		$dates = array();
+		for ( $day = $start; $day->format( 'Y-m' ) === $month; $day = $day->modify( '+1 day' ) ) {
+			$date = $day->format( 'Y-m-d' );
+			$dates[ $date ] = ( $date < $minimum || $date > $maximum ) ? 0 : count( Availability::slots( array_merge( $args, array( 'date' => $date ) ) ) );
+		}
+		return rest_ensure_response( array( 'month' => $month, 'dates' => $dates, 'today' => $now->format( 'Y-m-d' ), 'min_date' => $minimum, 'max_date' => $maximum ) );
+	}
+
 	public function public_locations() {
 		return rest_ensure_response( \Praxleo\Appointment\Database\Repository::all( 'locations', array( 'enabled' => 1 ), 'position ASC, id ASC' ) );
 	}
 
 	public function public_services( $req ) {
-		$location_id = (int) $req->get_param( 'location_id' );
-		$services    = \Praxleo\Appointment\Database\Repository::all( 'services', array( 'enabled' => 1 ), 'position ASC, id ASC' );
-		$cats        = \Praxleo\Appointment\Database\Repository::all( 'service_categories', array(), 'position ASC, id ASC' );
-		if ( $location_id ) {
-			global $wpdb;
-			$ss  = \Praxleo\Appointment\Database\Schema::table( 'staff_services' );
-			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT service_id FROM $ss WHERE location_id = %d AND enabled = 1", $location_id ) );
-			$services = array_values( array_filter( $services, static function ( $s ) use ( $ids ) {
-				return in_array( (string) $s['id'], $ids, true ) || in_array( (int) $s['id'], array_map( 'intval', $ids ), true );
-			} ) );
+		global $wpdb;
+		$location_id = absint( $req->get_param( 'location_id' ) );
+		$services = Repository::all( 'services', array( 'enabled' => 1 ), 'position ASC, id ASC' );
+		$categories = Repository::all( 'service_categories', array(), 'position ASC, id ASC' );
+		$links = Schema::table( 'staff_services' );
+		$staff = Schema::table( 'staff' );
+		$locations = Schema::table( 'locations' );
+		$assignments = $wpdb->get_results( "SELECT DISTINCT ss.service_id, ss.location_id FROM $links ss INNER JOIN $staff s ON s.id = ss.staff_id AND s.enabled = 1 INNER JOIN $locations l ON l.id = ss.location_id AND l.enabled = 1 WHERE ss.enabled = 1", ARRAY_A );
+		$location_map = array();
+		foreach ( $assignments as $assignment ) {
+			$location_map[ (int) $assignment['service_id'] ][] = (int) $assignment['location_id'];
 		}
-		return rest_ensure_response( array( 'services' => $services, 'categories' => $cats ) );
+		foreach ( $services as &$service ) {
+			$service['location_ids'] = $location_map[ (int) $service['id'] ] ?? array();
+		}
+		unset( $service );
+		if ( $location_id ) {
+			$services = array_values( array_filter( $services, static fn( $service ) => in_array( $location_id, $service['location_ids'], true ) ) );
+		}
+		return rest_ensure_response( array( 'services' => $services, 'categories' => $categories ) );
 	}
 
 	public function public_staff( $req ) {
