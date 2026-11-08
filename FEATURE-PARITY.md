@@ -1,0 +1,48 @@
+﻿# Appointment Pro feature parity
+
+The bundled `praxleo-booking` folder is the reference. Its plugin files remain unchanged. The implementation uses Appointment Pro's namespace, `px_appointment_*` tables/options, and existing blue, pink and teal UI palette.
+
+| Reference functionality | Appointment Pro implementation |
+| --- | --- |
+| Locations, categories, services, descriptions, prices, duration and padding | Existing admin catalog retained; missing catalog fields exposed |
+| Staff and service/location assignments | Existing forms retained; per-assignment prices exposed |
+| Weekly hours, breaks, days off | Nested breaks survive schedule edits; time-off controls added |
+| Availability, notice limits, booking horizon, conflicts and holds | Existing availability engine retained; public creation validates the offered slot |
+| Public eight-step wizard | `src/public`, compiled into `lib/public` |
+| Shortcode with location/service/staff presets | `[px-appointment location_id="1" service_id="2" staff_id="3"]`; omit presets for customer selection |
+| Gutenberg booking block | Appointment Pro block with preset controls |
+| Extras and quantity limits | Public extras step; duration rechecked before continuing |
+| Coupon validation and discounts | Public coupon entry and existing domain validation |
+| Custom fields and service targeting | Field options/service IDs exposed in admin; typed public inputs and required validation |
+| Guest customers and optional WordPress accounts | Existing customer/account domain used by the public details step |
+| Appointment creation, statuses, rescheduling, calendar | Existing admin flows retained; token lookup/cancellation and deletion added |
+| Catalog/staff/appointment bulk deletion | Protected API endpoints and selection controls |
+| Local payment, Stripe, PayPal, WooCommerce | Provider handlers and WooCommerce hooks added; Stripe card confirmation and PayPal buttons implemented |
+| Email templates, placeholders, booking/cancellation mail, reminders | Existing mailer and hourly maintenance retained; cancellation links connected |
+| Dashboard and payment history | Existing admin screens retained |
+| Demo data, reset, CSV export/import | Database screen; all 17 reference tables supported; reset retains templates |
+| Documentation | Documentation screen with current shortcode and webhook paths |
+| Optional uninstall cleanup | Data retained unless deletion is enabled in Settings |
+
+## Payment setup
+
+Configure enabled providers in Settings. Stripe requires its publishable/secret keys and webhook signing secret. Use `/wp-json/px-appointment/v1/webhooks/stripe` for payment intent success/failure events. PayPal requires its client ID/secret and webhook ID; use `/wp-json/px-appointment/v1/webhooks/paypal`. WooCommerce requires an active WooCommerce installation.
+
+Webhook verification follows the provider references: [Stripe signature verification](https://docs.stripe.com/webhooks/signature) and [PayPal webhooks](https://developer.paypal.com/api/rest/webhooks/rest/).
+
+Payment amounts are stored with the booking. Public payment requests require its booking token. Provider callbacks are authenticated and repeated callbacks do not duplicate completed payments.
+
+## Verification
+
+From the plugin directory:
+
+```powershell
+npm --prefix src/admin run build
+npm --prefix src/admin run build:public
+php tests/integration.php
+python tests/browser-smoke.py
+```
+
+The PHP integration suite loads the local WordPress installation, uses temporary booking tables, intercepts mail, mocks provider HTTP responses, and restores settings after the run. It is CLI-only. Browser fixtures exercise the compiled public/admin assets against mock APIs. Set `PX_CHROME` if Chrome is installed in a different location.
+
+Live Stripe/PayPal transactions, actual email delivery, and WooCommerce checkout require verification in the configured site/provider environments. The automated checks do not charge a card or modify live booking records.
