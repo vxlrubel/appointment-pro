@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/admin/main.css"></head><body><div id="appointment-pro"></div><pre id="test-result">RUNNING</pre><script>
+window.pxAppointmentAdmin={root:'/mock/',nonce:'test'};
+window.confirm=()=>true;
+const result=document.getElementById('test-result');let categories=[{id:1,name:'Test category',position:1}];
+window.addEventListener('error',e=>{result.dataset.error=e.message});
+window.addEventListener('unhandledrejection',e=>{result.dataset.error=String(e.reason)});
+window.fetch=async function(url,options={}){
+ const path=String(url).replace('/mock/','').split('?')[0];let data=[];
+ if(path==='dashboard')data={counts:{today:0,pending:0,approved:0,revenue:0},upcoming:[]};
+ if(path==='settings')data={company_name:'Test Company',timezone:'UTC',currency:'USD',slot_length:15,local_enabled:true};
+ if(path==='admin/categories')data=categories;
+ if(path==='admin/categories/bulk-delete'){categories=[];data={ok:true};}
+ return new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
+};
+async function waitFor(test){for(let n=0;n<100;n++){if(test())return;await new Promise(r=>setTimeout(r,30))}throw new Error('Timed out: '+test)}
+function nav(text){Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()===text).click()}
+window.addEventListener('load',async()=>{try{
+ await waitFor(()=>document.querySelector('.px-page-title')?.textContent==='Dashboard');
+ nav('Categories');await waitFor(()=>document.querySelector('tbody input[type="checkbox"]'));
+ document.querySelector('tbody input[type="checkbox"]').click();
+ await waitFor(()=>!document.querySelector('.px-toolbar button').disabled);
+ Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Delete selected')).click();
+ await waitFor(()=>!document.querySelector('tbody input[type="checkbox"]'));
+ nav('Staff');await waitFor(()=>document.querySelector('.px-page-title')?.textContent==='Staff');
+ Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Add').click();
+ await waitFor(()=>document.querySelector('form'));
+ nav('Settings');await waitFor(()=>document.querySelector('input[type="password"]'));
+ nav('Database');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('Export CSV'));
+ nav('Documentation');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('[px-appointment]'));
+ if(result.dataset.error)throw new Error(result.dataset.error);
+ result.textContent='PASS admin UI: dashboard, catalog bulk deletion, staff form, payment settings, database tools, documentation';
+}catch(e){result.textContent='FAIL '+(result.dataset.error||e.message)}});
+</script><script type="module" src="../lib/admin/main.js"></script></body></html>
