@@ -23,6 +23,7 @@ watchEffect(() => {
 				<RouterLink to="/">Dashboard</RouterLink>
 				<RouterLink to="/appointment">Appointment</RouterLink>
 				<RouterLink to="/service">Services</RouterLink>
+				<RouterLink to="/categpries">Categories</RouterLink>
 			</aside>
 			<div class="px-main-content">
 
