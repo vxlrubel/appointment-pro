@@ -1,4 +1,4 @@
-﻿"""Run production browser smoke tests against local mock APIs; no WordPress data changes."""
+"""Run production browser smoke tests against local mock APIs; no WordPress data changes."""
 import functools
 import http.server
 import os
@@ -25,7 +25,7 @@ server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 try:
     with tempfile.TemporaryDirectory(prefix='px-appointment-smoke-', ignore_cleanup_errors=True) as profile:
-        for fixture in ['ui-smoke.html', 'admin-smoke.html']:
+        for fixture in ['ui-smoke.html', 'ui-smoke.html?scenario=preset', 'ui-smoke.html?scenario=failure', 'admin-smoke.html']:
             url = f'http://127.0.0.1:{server.server_port}/tests/{fixture}'
             result = subprocess.run([
                 chrome, '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
