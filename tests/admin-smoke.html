@@ -6,6 +6,8 @@ window.addEventListener('error',e=>{result.dataset.error=e.message});
 window.addEventListener('unhandledrejection',e=>{result.dataset.error=String(e.reason)});
 window.fetch=async function(url,options={}){
  const path=String(url).replace('/mock/','').split('?')[0];let data=[];
+ if(!options.method || options.method==='GET') await new Promise(resolve=>setTimeout(resolve,180));
+ if(window.failNextPath===path){window.failNextPath=null;return new Response(JSON.stringify({message:'Temporary connection problem'}),{status:503,headers:{'Content-Type':'application/json'}});}
  if(path==='dashboard')data={counts:{today:0,pending:0,approved:0,revenue:0},upcoming:[]};
  if(path==='settings')data={company_name:'Test Company',timezone:'UTC',currency:'USD',slot_length:15,local_enabled:true};
  if(path==='admin/categories')data=categories;
@@ -16,18 +18,29 @@ async function waitFor(test){for(let n=0;n<100;n++){if(test())return;await new P
 function nav(text){Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()===text).click()}
 window.addEventListener('load',async()=>{try{
  await waitFor(()=>document.querySelector('.px-page-title')?.textContent==='Dashboard');
- nav('Categories');await waitFor(()=>document.querySelector('tbody input[type="checkbox"]'));
+ await waitFor(()=>document.querySelector('[aria-label="Loading dashboard"]'));
+ if(document.querySelector('.px-main-content').textContent.includes('No upcoming appointments.'))throw new Error('Dashboard displayed empty state before loading');
+ await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
+ nav('Categories');await waitFor(()=>document.querySelector('[aria-label="Loading records"]'));
+ if(!Array.from(document.querySelectorAll('.px-toolbar button')).every(button=>button.disabled))throw new Error('Catalog controls enabled before loading');
+ await waitFor(()=>document.querySelector('tbody input[type="checkbox"]'));
  document.querySelector('tbody input[type="checkbox"]').click();
  await waitFor(()=>!document.querySelector('.px-toolbar button').disabled);
  Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Delete selected')).click();
  await waitFor(()=>!document.querySelector('tbody input[type="checkbox"]'));
- nav('Staff');await waitFor(()=>document.querySelector('.px-page-title')?.textContent==='Staff');
+ nav('Staff');await waitFor(()=>document.querySelector('[aria-label="Loading staff"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Add').click();
  await waitFor(()=>document.querySelector('form'));
- nav('Settings');await waitFor(()=>document.querySelector('input[type="password"]'));
+ nav('Settings');await waitFor(()=>document.querySelector('[aria-label="Loading settings"]'));await waitFor(()=>document.querySelector('input[type="password"]'));
  nav('Database');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('Export CSV'));
  nav('Documentation');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('[px-appointment]'));
+ nav('Payments');await waitFor(()=>document.querySelector('[aria-label="Loading payments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
+ nav('Calendar');await waitFor(()=>document.querySelector('[aria-label="Loading calendar"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
+ nav('Appointments');await waitFor(()=>document.querySelector('[aria-label="Loading appointments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
+ window.failNextPath='dashboard';nav('Dashboard');await waitFor(()=>document.querySelector('[aria-label="Loading dashboard"]'));
+ await waitFor(()=>document.querySelector('.px-error')?.textContent.includes('Temporary connection problem'));
+ if(document.querySelector('.px-loading-skeleton'))throw new Error('Loading placeholder remained after request failure');
  if(result.dataset.error)throw new Error(result.dataset.error);
- result.textContent='PASS admin UI: dashboard, catalog bulk deletion, staff form, payment settings, database tools, documentation';
+ result.textContent='PASS admin UI: delayed loading skeletons, disabled catalog controls, request error recovery, dashboard, bulk deletion, staff, settings, calendar, payments, appointments, database, documentation';
 }catch(e){result.textContent='FAIL '+(result.dataset.error||e.message)}});
 </script><script type="module" src="../lib/admin/main.js"></script></body></html>
