@@ -10,16 +10,19 @@ const router = createRouter({
       path: '/',
       name: 'Dashboard',
       component: HomeView,
+      meta: { title: 'Dashboard' },
     },
     {
       path: '/appointment',
       name: 'Appointment',
       component: AppointmentView,
+      meta: { title: 'Appointments' },
     },
     {
       path: '/service',
       name: 'Services',
       component: ServiceView,
+      meta: { title: 'Services' },
     },
   ],
 })

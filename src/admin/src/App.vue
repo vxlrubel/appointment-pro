@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { computed, watchEffect } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+
+const route = useRoute()
+
+const pageTitle = computed(() => (route.meta.title as string | undefined) ?? 'Dashboard')
+
+watchEffect(() => {
+	document.title = `${pageTitle.value} - Appointment Pro`
+})
 </script>
 
 <template>
@@ -17,7 +26,7 @@ import { RouterLink, RouterView } from 'vue-router'
 			</aside>
 			<div class="px-main-content">
 
-				<h2 class="px-page-title">Dashboard (dynamic title)</h2>
+				<h2 class="px-page-title">{{ pageTitle }}</h2>
 
 				<RouterView />
 			</div>
