@@ -101,3 +101,241 @@
   font-size: 14px;
   color: #0d6efd;
 }
+
+/* Service catalog controls and request-driven booking placeholders. */
+.pxb-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+.pxb-filters label {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.pxb-filters select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: #fff;
+  color: #1e1e1e;
+  font: inherit;
+}
+.pxb-filters select:focus-visible,
+.pxb-choice:focus-visible,
+.pxb-btn:focus-visible,
+.pxb-slot:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 3px;
+}
+.pxb-muted {
+  color: #6c757d;
+  font-size: 13px;
+}
+.px-appointment-booking button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.pxb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.pxb-loading {
+  margin: 12px 0;
+}
+.pxb-skeleton {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #edf0f4;
+}
+.pxb-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 15%,
+    rgba(255, 255, 255, 0.75) 50%,
+    transparent 85%
+  );
+  transform: translateX(-100%);
+  animation: pxb-shimmer 1.7s ease-in-out infinite;
+}
+.pxb-skeleton-title {
+  width: 160px;
+  max-width: 65%;
+  height: 20px;
+  margin: 4px 0 22px;
+}
+.pxb-skeleton-input {
+  width: 100%;
+  height: 40px;
+}
+.pxb-skeleton-filters {
+  margin-bottom: 24px;
+}
+.pxb-skeleton-choice {
+  padding: 16px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+}
+.pxb-skeleton-line {
+  width: 52%;
+  height: 15px;
+  margin-bottom: 12px;
+}
+.pxb-skeleton-short {
+  width: 32%;
+  height: 12px;
+}
+.pxb-skeleton-slot {
+  height: 36px;
+}
+@keyframes pxb-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pxb-skeleton::after {
+    animation: none;
+    display: none;
+  }
+}
+@media (max-width: 480px) {
+  .pxb-filters {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pxb-service-card {
+  margin-bottom: 12px;
+}
+.pxb-calendar {
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  background: #fff;
+}
+.pxb-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.pxb-calendar-nav {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  font-size: 24px;
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 7px;
+  color: #0d6efd;
+  cursor: pointer;
+}
+.pxb-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.pxb-calendar-weekday {
+  padding-bottom: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6c757d;
+}
+.pxb-calendar-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 46px;
+  padding: 8px 2px;
+  background: #f0f6ff;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 14px;
+  color: #0a58ca;
+  cursor: pointer;
+}
+.pxb-calendar-day:enabled:hover {
+  border-color: #0d6efd;
+  background: #e3eeff;
+}
+.pxb-calendar-day:focus-visible,
+.pxb-calendar-nav:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+.px-appointment-booking .pxb-calendar-day:disabled {
+  opacity: 1;
+  color: #a5aab0;
+  background: #f8f9fa;
+  text-decoration: line-through;
+}
+.pxb-calendar-day.today {
+  border-color: #0d6efd;
+}
+.pxb-calendar-day.selected,
+.pxb-calendar-day.selected:enabled:hover {
+  background: #0d6efd;
+  color: #fff;
+  border-color: #0d6efd;
+  font-weight: 600;
+}
+.px-appointment-booking .pxb-calendar-day.is-loading:disabled {
+  text-decoration: none;
+}
+.pxb-calendar-placeholder {
+  position: absolute;
+  bottom: 4px;
+  width: 40%;
+  height: 4px;
+}
+.pxb-calendar-legend {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: #6c757d;
+}
+.pxb-calendar-legend > span {
+  flex: 0 0 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0d6efd;
+}
+.pxb-times-heading {
+  margin-bottom: 8px;
+}
+@media (max-width: 480px) {
+  .pxb-calendar {
+    padding: 12px 8px;
+  }
+  .pxb-calendar-grid {
+    gap: 3px;
+  }
+  .pxb-calendar-day {
+    min-height: 38px;
+  }
+}
