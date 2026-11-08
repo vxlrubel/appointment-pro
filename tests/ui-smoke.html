@@ -1,32 +1,111 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/public/public.css"></head><body>
 <div id="px-appointment-booking-app" data-location-id="0" data-service-id="0" data-staff-id="0"></div><pre id="test-result">RUNNING</pre>
 <script>
+const scenario=new URLSearchParams(location.search).get('scenario');
+if(scenario==='preset')document.getElementById('px-appointment-booking-app').dataset.locationId='2';
 window.pxAppointmentPublic={root:'/mock/',nonce:''};
 const result=document.getElementById('test-result');
-window.addEventListener('error',e=>{result.dataset.error=e.message; result.textContent='FAIL '+e.message});
-window.addEventListener('unhandledrejection',e=>{result.dataset.error=String(e.reason);});
+window.addEventListener('error',e=>{result.dataset.error=e.message});
+window.addEventListener('unhandledrejection',e=>{result.dataset.error=String(e.reason)});
 const created={appointment:{id:1,status:'approved'},customer_appointment:{token:'0123456789abcdef0123456789abcdef'},payments:[{status:'completed',amount:45}],amount:45};
-window.fetch=async function(url,options){
- const path=String(url).replace('/mock/','').split('?')[0];
- const data={config:{currency:'USD',local_enabled:true},locations:[{id:1,name:'Test venue'}],services:{services:[{id:1,name:'Test service',duration_sec:1800,price:50}],categories:[]},staff:[{id:1,full_name:'Test staff',override_price:45}],extras:[], 'custom-fields':[],availability:[{staff_id:1,start:'2026-12-01 09:00:00',display:'09:00'}],appointments:created}[path];
- if(data===undefined) throw new Error('Unexpected request '+path);
+let failBoot=scenario==='failure',failSlots=false,failMonth=false;
+window.fetch=async function(url,options={}){
+ const parsed=new URL(url,location.href),path=parsed.pathname.replace('/mock/','');
+ await new Promise(resolve=>setTimeout(resolve,180));
+ if((path==='config'&&failBoot)||(path==='availability'&&failSlots)||(path==='availability/dates'&&failMonth)){failBoot=false;failSlots=false;failMonth=false;return new Response(JSON.stringify({message:'Temporary connection problem'}),{status:503,headers:{'Content-Type':'application/json'}})}
+ let data={config:{currency:'USD',local_enabled:true,today:'2026-12-01',timezone:'UTC'},locations:[{id:1,name:'Test venue',address:'First address'},{id:2,name:'Second venue',address:'Second address'}],services:{services:[{id:1,name:'Test service',category_id:1,duration_sec:1800,price:50,location_ids:[1,2]},{id:2,name:'Other service',category_id:2,duration_sec:3600,price:60,location_ids:[2]},{id:3,name:'General service',category_id:null,duration_sec:1800,price:25,location_ids:[1]},{id:4,name:'Unavailable service',category_id:1,duration_sec:1800,price:20,location_ids:[]}],categories:[{id:1,name:'Consultations'},{id:2,name:'Wellness'}]},staff:[{id:1,full_name:'Test staff',override_price:45}],extras:[], 'custom-fields':[],availability:[{staff_id:1,start:(parsed.searchParams.get('date')||'2026-12-03')+' 09:00:00',display:'09:00'}],appointments:created,'coupons/validate':{total:45,discount:0}}[path];
+ if(path==='availability/dates'){
+  const month=parsed.searchParams.get('month');const days=new Date(Number(month.slice(0,4)),Number(month.slice(5,7)),0).getDate();const dates={};
+  for(let day=1;day<=days;day++)dates[month+'-'+String(day).padStart(2,'0')]=(month!=='2027-01'&&(day===3||day===5))?1:0;
+  data={month,dates,today:'2026-12-01',min_date:'2026-12-01',max_date:'2027-02-28'};
+ }
+ if(data===undefined)throw new Error('Unexpected request '+path);
+ if(path==='appointments'){
+  const payload=JSON.parse(options.body);
+  if(payload.service_id!==1||!payload.location_id||payload.staff_id!==1)throw new Error('Invalid service/location/staff in booking');
+ }
  return new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
 };
 async function waitFor(test){for(let n=0;n<100;n++){if(test())return;await new Promise(r=>setTimeout(r,30))}throw new Error('Timed out: '+test)}
-function click(text){const button=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes(text));if(!button)throw new Error('Missing button '+text);button.click()}
+function click(text){const button=Array.from(document.querySelectorAll('#px-appointment-booking-app button')).find(b=>b.textContent.includes(text));if(!button||button.disabled)throw new Error('Missing or disabled button '+text);button.click()}
 function field(placeholder,value){const el=document.querySelector('input[placeholder="'+placeholder+'"]');el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}))}
-window.addEventListener('load',async()=>{
- try {
- await waitFor(()=>document.querySelector('h3')?.textContent==='Choose a location');click('Test venue');
- await waitFor(()=>document.querySelector('h3')?.textContent==='Choose a service');click('Test service');
- await waitFor(()=>document.querySelector('h3')?.textContent==='Choose staff');click('Any staff');
- await waitFor(()=>document.querySelector('h3')?.textContent==='Date and time');click('09:00');
- await waitFor(()=>document.querySelector('h3')?.textContent==='Your details');field('Full name','Test Customer');field('Email','test@example.test');
- document.querySelector('form').requestSubmit();
- await waitFor(()=>document.querySelector('h3')?.textContent==='Payment');
- if(!document.body.textContent.includes('45.00'))throw new Error('Price override was not displayed');click('Pay at location');
- await waitFor(()=>document.querySelector('h3')?.textContent==='Booking received');
- result.textContent='PASS public booking UI: location, service, any staff, time, validated details, price override, local payment, confirmation';
- }catch(e){result.textContent='FAIL '+(result.dataset.error || e.message)}
-});
+function select(label,value){const el=Array.from(document.querySelectorAll('label')).find(labelElement=>labelElement.textContent.trim().startsWith(label)).querySelector('select');el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}))}
+const heading=text=>document.querySelector('h3')?.textContent===text;
+window.addEventListener('load',async()=>{try{
+ await waitFor(()=>document.querySelector('[aria-label="Loading services"]'));
+ if(scenario==='failure'){
+  await waitFor(()=>document.querySelector('[role="alert"]')?.textContent.includes('Temporary connection problem'));
+  if(document.querySelector('.pxb-loading'))throw new Error('Boot skeleton remained after failure');
+  click('Try again');await waitFor(()=>document.querySelector('[aria-label="Loading services"]'));
+ }
+ await waitFor(()=>heading('Choose a service'));
+ if(document.querySelector('.pxb-steps span').textContent.trim()!=='service')throw new Error('Service is not the first step');
+ if(document.querySelectorAll('select').length!==2 || document.querySelector('.pxb-service-card select'))throw new Error('Filters must only appear at the top');
+ const optionsFor=label=>Array.from(Array.from(document.querySelectorAll('.pxb-filters label')).find(element=>element.textContent.trim().startsWith(label)).querySelector('select').options).map(option=>option.value);
+ if(scenario==='preset'){
+  if(document.querySelector('.pxb-filters select').value!=='2')throw new Error('Location preset not applied');
+  if(optionsFor('Category').includes('0'))throw new Error('Preset location shows unrelated category');
+  click('Test service');await waitFor(()=>heading('Choose staff'));
+ }else{
+  if(document.querySelectorAll('.pxb-choice').length!==4)throw new Error('Initial catalog does not show all services');
+  if(!Array.from(document.querySelectorAll('.pxb-choice')).find(b=>b.textContent.includes('Unavailable service')).disabled)throw new Error('Unassigned service is bookable');
+  select('Location','1');await waitFor(()=>!optionsFor('Category').includes('2'));
+  if(!optionsFor('Category').includes('0'))throw new Error('Related uncategorized option missing');
+  select('Category','0');await waitFor(()=>optionsFor('Location').join(',')==='0,1');
+  if(document.querySelectorAll('.pxb-choice').length!==1 || !document.querySelector('.pxb-choice').textContent.includes('General service'))throw new Error('Uncategorized filter failed');
+  select('Category','');await waitFor(()=>optionsFor('Location').length===3);
+  select('Location','0');await waitFor(()=>document.querySelectorAll('.pxb-choice').length===4);
+  select('Category','2');await waitFor(()=>optionsFor('Location').join(',')==='0,2');
+  select('Location','2');await waitFor(()=>!optionsFor('Category').includes('0'));
+  if(document.querySelectorAll('.pxb-choice').length!==1 || !document.querySelector('.pxb-choice').textContent.includes('Other service'))throw new Error('Combined filters failed');
+  select('Category','');await waitFor(()=>document.querySelectorAll('.pxb-choice').length===2);
+  select('Location','0');await waitFor(()=>document.querySelectorAll('.pxb-choice').length===4);
+  if(Array.from(document.querySelectorAll('.pxb-choice')).filter(button=>!button.textContent.includes('Unavailable service')).some(button=>button.disabled))throw new Error('Bookable services must be enabled with All filters');
+  click('Test service');await waitFor(()=>document.querySelector('[aria-label="Loading booking options"]'));
+  await waitFor(()=>heading('Choose staff'));click('Back');await waitFor(()=>heading('Choose a service'));
+  const filters=()=>Array.from(document.querySelectorAll('.pxb-filters select')).map(field=>field.value);
+  if(filters().join(',')!=='1,1')throw new Error('Service did not automatically select its category and first valid location');
+  select('Category','');select('Location','2');await waitFor(()=>document.querySelectorAll('.pxb-choice').length===2);
+  click('Test service');await waitFor(()=>heading('Choose staff'));click('Back');await waitFor(()=>heading('Choose a service'));
+  if(filters().join(',')!=='2,1')throw new Error('Explicit location was not preserved');
+  select('Category','');select('Location','0');await waitFor(()=>document.querySelectorAll('.pxb-choice').length===4);
+  click('General service');await waitFor(()=>heading('Choose staff'));click('Back');await waitFor(()=>heading('Choose a service'));
+  if(filters().join(',')!=='1,0')throw new Error('Uncategorized service was not automatically selected correctly');
+  select('Category','');select('Location','0');await waitFor(()=>document.querySelectorAll('.pxb-choice').length===4);
+  click('Test service');await waitFor(()=>heading('Choose staff'));
+ }
+ if(Array.from(document.querySelectorAll('.pxb-steps span')).some(step=>step.textContent.trim()==='location'))throw new Error('Location step is still visible');
+ click('Any staff');await waitFor(()=>document.querySelector('[aria-label="Loading available dates"]'));
+ if(!document.querySelector('.pxb-calendar'))throw new Error('Calendar hidden during loading');
+ await waitFor(()=>document.querySelector('[aria-label="Loading available times"]'));
+ await waitFor(()=>document.querySelector('.pxb-slot'));
+ if(document.querySelector('input[type="date"]'))throw new Error('Native date input still present');
+ if(!document.querySelector('[data-date="2026-12-04"]').disabled)throw new Error('Unavailable date is enabled');
+ if(document.querySelector('[data-date="2026-12-05"]').disabled)throw new Error('Available date is disabled');
+ failSlots=true;document.querySelector('[data-date="2026-12-05"]').click();
+ await waitFor(()=>document.querySelector('[aria-label="Loading available times"]'));
+ await waitFor(()=>document.querySelector('[role="alert"]')?.textContent.includes('Temporary connection problem'));
+ if(!document.querySelector('.pxb-calendar'))throw new Error('Calendar disappeared after failure');
+ click('Retry availability');await waitFor(()=>document.querySelector('.pxb-slot'));
+ failMonth=true;document.querySelector('[aria-label="Next month"]').click();
+ await waitFor(()=>document.querySelector('[aria-label="Loading available dates"]'));
+ await waitFor(()=>document.querySelector('[role="alert"]')?.textContent.includes('Temporary connection problem'));
+ click('Retry availability');await waitFor(()=>document.querySelector('.pxb-card').textContent.includes('No appointments are available this month'));
+ if(Array.from(document.querySelectorAll('.pxb-calendar-day')).some(day=>!day.disabled))throw new Error('Empty month has enabled dates');
+ document.querySelector('[aria-label="Next month"]').click();await waitFor(()=>document.querySelector('[data-date="2027-02-03"]:not(:disabled)'));
+ if(!document.querySelector('[aria-label="Next month"]').disabled)throw new Error('Calendar exceeds booking horizon');
+ document.querySelector('[aria-label="Previous month"]').click();await waitFor(()=>document.querySelector('.pxb-card').textContent.includes('No appointments are available this month'));
+ document.querySelector('[aria-label="Previous month"]').click();await waitFor(()=>document.querySelector('.pxb-slot'));
+ if(!document.querySelector('[aria-label="Previous month"]').disabled)throw new Error('Calendar permits months before booking window');
+ click('09:00');
+ await waitFor(()=>heading('Your details'));field('Full name','Test Customer');field('Email','test@example.test');
+ field('Coupon','TEST');click('Apply');await waitFor(()=>document.querySelector('[aria-label="Checking coupon"]'));
+ await waitFor(()=>!document.querySelector('.pxb-loading'));
+ document.querySelector('form').requestSubmit();await waitFor(()=>heading('Payment'));
+ if(!document.querySelector('.pxb-card').textContent.includes('45.00'))throw new Error('Price override missing');
+ click('Pay at location');await waitFor(()=>document.querySelector('[aria-label="Processing booking payment"]'));
+ await waitFor(()=>heading('Booking received'));
+ if(result.dataset.error)throw new Error(result.dataset.error);
+ result.textContent='PASS public booking ('+(scenario||'filters')+'): enabled services with All filters, automatic location/category, linked filters, persistent calendar, disabled dates, month bounds, loading and retries, full checkout';
+}catch(e){result.textContent='FAIL '+(result.dataset.error||e.message)}});
 </script><script src="../lib/public/public.js" defer></script></body></html>
