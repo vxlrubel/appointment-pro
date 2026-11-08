@@ -1,6 +1,9 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
+
+const loading = ref(true)
 
 const form = ref({})
 const error = ref('')
@@ -12,6 +15,8 @@ onMounted(async () => {
     form.value = await api('settings')
   } catch (e) {
     error.value = e.message
+  } finally {
+    loading.value = false
   }
 })
 
@@ -35,7 +40,8 @@ async function save() {
   <p v-if="error" class="px-error">{{ error }}</p>
   <p v-if="saved" class="px-muted">Settings saved.</p>
 
-  <form class="px-form px-card" @submit.prevent="save">
+  <LoadingSkeleton v-if="loading" variant="form" :columns="4" label="Loading settings" />
+  <form v-else class="px-form px-card" @submit.prevent="save">
     <div class="px-form-row">
       <div class="px-field">
         <label>Company name</label>
