@@ -11,6 +11,20 @@ export const useBooking = defineStore("booking", {
   state: () => ({
     config: {},
     preset: { location_id: 0, service_id: 0, staff_id: 0 },
+    pending: {
+      boot: true,
+      staff: false,
+      slots: false,
+      coupon: false,
+      month: false,
+    },
+    locationFilterId: 0,
+    categoryFilterId: "",
+    slotRequest: 0,
+    monthRequest: 0,
+    calendarMonth: "",
+    calendarDays: {},
+    calendarBounds: {},
     locations: [],
     services: [],
     categories: [],
@@ -37,6 +51,24 @@ export const useBooking = defineStore("booking", {
     key: uuid(),
   }),
   getters: {
+    serviceLocations(state) {
+      const ids = state.service?.location_ids || [];
+      return state.locations.filter((location) =>
+        ids.includes(Number(location.id)),
+      );
+    },
+    filteredServices(state) {
+      return state.services.filter(
+        (service) =>
+          (!state.locationFilterId ||
+            (service.location_ids || []).includes(
+              Number(state.locationFilterId),
+            )) &&
+          (state.categoryFilterId === "" ||
+            Number(service.category_id || 0) ===
+              Number(state.categoryFilterId)),
+      );
+    },
     extrasList(state) {
       return Object.entries(state.extraSel)
         .filter(([, qty]) => qty > 0)
