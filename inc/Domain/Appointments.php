@@ -60,6 +60,8 @@ class Appointments {
 			return new WP_Error( 'invalid', __( 'Invalid location, service, or staff.', 'appointment-pro' ), array( 'status' => 400 ) );
 		}
 
+		if ( ! $is_admin && ( empty( $service['enabled'] ) || empty( $staff['enabled'] ) || empty( $location['enabled'] ) || ! Availability::candidate_staff( $location_id, $service_id, $staff_id ) ) ) { return new WP_Error( 'invalid', 'This service is unavailable.', array( 'status' => 400 ) ); }
+
 		$duration   = (int) $service['duration_sec'];
 		$price      = self::unit_price( $staff_id, $service_id, $location_id, $service );
 		$extra_rows = array();
@@ -71,6 +73,7 @@ class Appointments {
 				return new WP_Error( 'invalid', __( 'Invalid extra.', 'appointment-pro' ), array( 'status' => 400 ) );
 			}
 
+			if ( empty( $row['enabled'] ) ) { return new WP_Error( 'invalid', 'This extra is unavailable.', array( 'status' => 400 ) ); }
 			$quantity   = max( 1, min( (int) $row['max_quantity'], (int) ( $extra['qty'] ?? 1 ) ) );
 			$duration  += (int) $row['duration_sec'] * $quantity;
 			$price     += (float) $row['price'] * $quantity;
@@ -87,6 +90,11 @@ class Appointments {
 		$start_s  = $start_dt->format( 'Y-m-d H:i:s' );
 		$end_s    = $end_dt->format( 'Y-m-d H:i:s' );
 
+		if ( ! $is_admin ) {
+			$date = $start_dt->setTimezone( new DateTimeZone( Settings::get( 'timezone', 'UTC' ) ) )->format( 'Y-m-d' );
+			$slots = Availability::slots( array( 'location_id' => $location_id, 'service_id' => $service_id, 'staff_id' => $staff_id, 'date' => $date, 'extras' => $extras ) );
+			if ( ! array_filter( $slots, static fn( $slot ) => $slot['start'] === $start_s ) ) { return new WP_Error( 'conflict', 'This time is no longer available.', array( 'status' => 409 ) ); }
+		}
 		$coupon_id = null;
 		$discount  = 0;
 
@@ -102,6 +110,13 @@ class Appointments {
 			$price     = $valid['total'];
 		}
 
+		foreach ( ( $is_admin ? array() : Repository::all( 'custom_fields', array( 'enabled' => 1 ) ) ) as $field ) {
+			$services = json_decode( $field['services_json'] ?: '[]', true ) ?: array();
+			if ( $services && ! in_array( $service_id, array_map( 'intval', $services ), true ) ) { continue; }
+			$value = $payload['custom_fields'][ $field['id'] ] ?? '';
+			if ( ! empty( $field['required'] ) && ( $value === '' || $value === null || $value === false ) ) { return new WP_Error( 'invalid', 'Please complete: ' . $field['label'], array( 'status' => 400 ) ); }
+			if ( $value !== '' && $field['type'] === 'select' && ! in_array( $value, json_decode( $field['options_json'] ?: '[]', true ) ?: array(), true ) ) { return new WP_Error( 'invalid', 'Invalid selection: ' . $field['label'], array( 'status' => 400 ) ); }
+		}
 		$customer_id = Customers::upsert(
 			is_array( $payload['customer'] ?? null ) ? $payload['customer'] : array(),
 			! empty( $payload['create_account'] )
@@ -139,12 +154,15 @@ class Appointments {
 			)
 		);
 
+		if ( ! $appointment_id ) { $wpdb->query( 'ROLLBACK' ); return new WP_Error( 'create_failed', 'Could not create appointment.', array( 'status' => 500 ) ); }
+
 		$customer_appointment_id = Repository::insert(
 			'customer_appointments',
 			array(
 				'appointment_id'     => $appointment_id,
 				'customer_id'        => $customer_id,
 				'number_of_persons'  => 1,
+				'amount'             => $price,
 				'extras_json'        => wp_json_encode( $extra_rows ),
 				'custom_fields_json' => wp_json_encode( $payload['custom_fields'] ?? array() ),
 				'coupon_id'          => $coupon_id,
@@ -154,6 +172,7 @@ class Appointments {
 			)
 		);
 
+		if ( ! $customer_appointment_id ) { $wpdb->query( 'ROLLBACK' ); return new WP_Error( 'create_failed', 'Could not save booking details.', array( 'status' => 500 ) ); }
 		$wpdb->query( 'COMMIT' );
 
 		if ( $coupon_id ) {
@@ -227,6 +246,7 @@ class Appointments {
 			'staff'                => Repository::find( 'staff', (int) $appointment['staff_id'] ),
 			'location'             => Repository::find( 'locations', (int) $appointment['location_id'] ),
 			'payments'             => $payments,
+			'amount'               => (float) ( $customer_appointment['amount'] ?? ( $payments[0]['amount'] ?? self::unit_price( (int) $appointment['staff_id'], (int) $appointment['service_id'], (int) $appointment['location_id'], Repository::find( 'services', (int) $appointment['service_id'] ) ?: array( 'price' => 0 ) ) ) ),
 		);
 	}
 
@@ -414,5 +434,18 @@ class Appointments {
 		}
 
 		return $out;
+	}
+
+	public static function delete( $id ) {
+		$id = (int) $id;
+		if ( ! $id ) {
+			return;
+		}
+		$cas = \Praxleo\Appointment\Database\Repository::all( 'customer_appointments', array( 'appointment_id' => $id ) );
+		foreach ( $cas as $ca ) {
+			\Praxleo\Appointment\Database\Repository::delete( 'payments', array( 'customer_appointment_id' => $ca['id'] ) );
+			\Praxleo\Appointment\Database\Repository::delete( 'customer_appointments', array( 'id' => $ca['id'] ) );
+		}
+		\Praxleo\Appointment\Database\Repository::delete( 'appointments', array( 'id' => $id ) );
 	}
 }
