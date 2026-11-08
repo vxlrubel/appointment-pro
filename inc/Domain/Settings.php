@@ -107,6 +107,8 @@ class Settings {
 
 		return array(
 			'company_name'        => $all['company_name'],
+			'timezone'            => $all['timezone'],
+			'today'               => ( new \DateTimeImmutable( 'now', Mailer::timezone() ) )->format( 'Y-m-d' ),
 			'currency'            => $all['currency'],
 			'slot_length'         => (int) $all['slot_length'],
 			'local_enabled'       => (bool) $all['local_enabled'],
