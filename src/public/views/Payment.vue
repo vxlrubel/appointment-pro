@@ -1,4 +1,5 @@
 <script setup>
+import BookingSkeleton from "../components/BookingSkeleton.vue";
 import { nextTick, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useBooking } from "../store";
@@ -8,6 +9,8 @@ const router = useRouter();
 const cardHost = ref(null);
 const paypalHost = ref(null);
 const confirming = ref(false);
+const providerLoading = ref(false);
+const cardReady = ref(false);
 let stripe, card;
 function loadScript(src, name) {
   if (window[name]) return Promise.resolve(window[name]);
@@ -24,6 +27,8 @@ async function pay(method) {
   await store.submit(method);
   if (store.error || !store.result) return;
   if (!store.result.pending) return router.push("/done");
+  providerLoading.value = true;
+  cardReady.value = false;
   try {
     await nextTick();
     if (method === "stripe") {
@@ -32,6 +37,7 @@ async function pay(method) {
       card?.destroy();
       card = stripe.elements().create("card");
       card.mount(cardHost.value);
+      cardReady.value = true;
     }
     if (method === "paypal") {
       const paypal = await loadScript(
@@ -46,6 +52,7 @@ async function pay(method) {
         .Buttons({
           createOrder: () => store.result.order.id,
           onApprove: async (data) => {
+            confirming.value = true;
             try {
               await api("payments/paypal/capture", {
                 method: "POST",
@@ -59,6 +66,8 @@ async function pay(method) {
               router.push("/done");
             } catch (e) {
               store.error = e.message;
+            } finally {
+              confirming.value = false;
             }
           },
           onError: () => {
@@ -73,6 +82,8 @@ async function pay(method) {
     }
   } catch (e) {
     store.error = e.message;
+  } finally {
+    providerLoading.value = false;
   }
 }
 async function confirmCard() {
@@ -111,6 +122,16 @@ onBeforeUnmount(() => card?.destroy());
   <div class="pxb-card">
     <h3>Payment</h3>
     <p>Total: {{ store.config.currency }} {{ store.subtotal.toFixed(2) }}</p>
+    <BookingSkeleton
+      v-if="store.loading || confirming || providerLoading"
+      variant="form"
+      :label="
+        providerLoading
+          ? 'Loading secure payment form'
+          : 'Processing booking payment'
+      "
+      embedded
+    />
     <p v-if="store.error" class="pxb-err" role="alert">{{ store.error }}</p>
     <button
       v-for="method in ['local', 'stripe', 'paypal', 'woocommerce'].filter(
@@ -118,7 +139,7 @@ onBeforeUnmount(() => card?.destroy());
       )"
       :key="method"
       class="pxb-choice"
-      :disabled="store.loading || confirming"
+      :disabled="store.loading || confirming || providerLoading"
       @click="pay(method)"
     >
       {{
@@ -132,7 +153,11 @@ onBeforeUnmount(() => card?.destroy());
     </button>
     <div v-if="store.result?.pending === 'stripe'">
       <div ref="cardHost" class="pxb-card"></div>
-      <button class="pxb-btn" :disabled="confirming" @click="confirmCard">
+      <button
+        class="pxb-btn"
+        :disabled="confirming || !cardReady || providerLoading"
+        @click="confirmCard"
+      >
         {{ confirming ? "Processing..." : "Confirm payment" }}
       </button>
     </div>
@@ -149,7 +174,7 @@ onBeforeUnmount(() => card?.destroy());
     <div class="pxb-bar">
       <button
         class="pxb-btn ghost"
-        :disabled="store.loading || confirming"
+        :disabled="store.loading || confirming || providerLoading"
         @click="router.push('/details')"
       >
         Back
