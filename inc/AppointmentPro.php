@@ -46,7 +46,7 @@ final class AppointmentPro {
 	public function action_links( array $links ): array {
 		$settings_link = sprintf(
 			'<a href="%1$s">%2$s</a>',
-			esc_url( admin_url( 'appointment-pro.php' ) ),
+			esc_url( admin_url( 'admin.php?page=appointment-pro#/settings' ) ),
 			esc_html__( 'Settings', 'appointment-pro' )
 		);
 
@@ -69,7 +69,7 @@ final class AppointmentPro {
 
 		$plugin_meta[] = sprintf(
 			'<a href="%1$s" target="_blank" rel="noopener noreferrer"><span class="dashicons dashicons-media-document" aria-hidden="true"></span> %2$s</a>',
-			esc_url( admin_url( 'praxleo-booking.php#/document' ) ),
+			esc_url( admin_url( 'admin.php?page=appointment-pro#/document' ) ),
 			esc_html__( 'Documentation', 'praxleo-booking' )
 		);
 
@@ -110,6 +110,9 @@ final class AppointmentPro {
 	 * @return void
 	 */
 	private function register_hooks(): void {
+		( new \Praxleo\Appointment\PublicSite\Frontend() )->boot();
+		( new \Praxleo\Appointment\Payments\Payments() )->boot();
+		add_action( 'init', array( $this, 'register_block' ) );
 		add_action( 'init', array( $this, 'load_textdomain' ) );
 		add_action( 'init', array( Installer::class, 'maybe_install' ), 5 );
 		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
@@ -145,6 +148,30 @@ final class AppointmentPro {
 			'appointment-pro',
 			false,
 			dirname( plugin_basename( PX_APPOINTMENT_FILE ) ) . '/lang'
+		);
+	}
+
+	public function register_block() {
+		if ( ! function_exists( 'register_block_type' ) ) {
+			return;
+		}
+		wp_register_script( 'px-appointment-booking-block', PX_APPOINTMENT_URL . 'lib/editor/booking-block.js', array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components' ), PX_APPOINTMENT_VERSION, true );
+		register_block_type(
+			'px-appointment/booking',
+			array(
+				'api_version'     => 2,
+				'editor_script'   => 'px-appointment-booking-block',
+				'title'           => __( 'Appointment Pro', 'appointment-pro' ),
+				'description'     => __( 'Embed the Praxleo booking wizard.', 'appointment-pro' ),
+				'category'        => 'widgets',
+				'icon'            => 'calendar-alt',
+				'attributes'      => array(
+					'locationId' => array( 'type' => 'number', 'default' => 0 ),
+					'serviceId'  => array( 'type' => 'number', 'default' => 0 ),
+					'staffId'    => array( 'type' => 'number', 'default' => 0 ),
+				),
+				'render_callback' => array( '\Praxleo\Appointment\PublicSite\Frontend', 'render_block' ),
+			)
 		);
 	}
 }
