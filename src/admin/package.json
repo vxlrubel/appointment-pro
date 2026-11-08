@@ -13,7 +13,8 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
-    "build:public": "vite build --config vite.public.config.ts"
+    "build:public": "vite build --config vite.public.config.ts",
+    "build:all": "run-s build build:public"
   },
   "dependencies": {
     "pinia": "^4.0.3",
