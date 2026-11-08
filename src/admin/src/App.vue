@@ -21,9 +21,19 @@ watchEffect(() => {
 		<div class="px-main">
 			<aside class="px-sidebar">
 				<RouterLink to="/">Dashboard</RouterLink>
-				<RouterLink to="/appointment">Appointment</RouterLink>
-				<RouterLink to="/service">Services</RouterLink>
-				<RouterLink to="/categpries">Categories</RouterLink>
+				<RouterLink to="/calendar">Calendar</RouterLink>
+				<RouterLink to="/appointments">Appointments</RouterLink>
+				<RouterLink to="/services">Services</RouterLink>
+				<RouterLink to="/categories">Categories</RouterLink>
+				<RouterLink to="/staff">Staff</RouterLink>
+				<RouterLink to="/customers">Customers</RouterLink>
+				<RouterLink to="/locations">Locations</RouterLink>
+				<RouterLink to="/extras">Extras</RouterLink>
+				<RouterLink to="/coupons">Coupons</RouterLink>
+				<RouterLink to="/payments">Payments</RouterLink>
+				<RouterLink to="/notifications">Notifications</RouterLink>
+				<RouterLink to="/custom-fields">Custom fields</RouterLink>
+				<RouterLink to="/settings">Settings</RouterLink>
 			</aside>
 			<div class="px-main-content">
 

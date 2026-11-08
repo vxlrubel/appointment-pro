@@ -48,3 +48,178 @@ header.px-header {
 		padding: 20px;
 	}
 }
+
+/* Shared admin controls, kept in the plugin's existing colour palette. */
+.px-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 15px;
+}
+
+.px-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-top: 10px;
+}
+
+.px-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.px-muted {
+	color: #6c757d;
+	font-size: 13px;
+}
+
+.px-error {
+	color: var(--px-cancel-color);
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.px-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 7px 14px;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #fff;
+	background: var(--px-primary);
+	border: 1px solid var(--px-primary);
+	border-radius: 4px;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.px-button:hover {
+	background: #0b5ed7;
+	border-color: #0b5ed7;
+	color: #fff;
+}
+
+.px-button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.px-button.px-button-ghost {
+	color: var(--px-color);
+	background: #fff;
+	border-color: var(--px-line);
+}
+
+.px-button.px-button-ghost:hover {
+	background: #f8f9fa;
+	color: var(--px-color);
+}
+
+.px-button.px-button-danger {
+	color: #fff;
+	background: var(--px-cancel-color);
+	border-color: var(--px-cancel-color);
+}
+
+.px-button.px-button-danger:hover {
+	background: #d60057;
+	border-color: #d60057;
+	color: #fff;
+}
+
+.px-form {
+	display: grid;
+	gap: 12px;
+	max-width: 900px;
+}
+
+.px-form h3 {
+	margin: 10px 0 0;
+	padding-top: 10px;
+	border-top: 1px solid var(--px-line);
+}
+
+.px-form-row {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.px-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.px-field label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #50575e;
+}
+
+.px-field input,
+.px-field select,
+.px-field textarea {
+	width: 100%;
+	padding: 7px 9px;
+	font: inherit;
+	font-size: 13px;
+	color: var(--px-color);
+	background: #fff;
+	border: 1px solid var(--px-line);
+	border-radius: 4px;
+	box-sizing: border-box;
+}
+
+.px-field input:focus,
+.px-field select:focus,
+.px-field textarea:focus {
+	outline: 2px solid rgba(13, 110, 253, 0.25);
+	outline-offset: 0;
+	border-color: var(--px-primary);
+}
+
+.px-calendar {
+	display: grid;
+	grid-template-columns: 90px repeat(7, minmax(120px, 1fr));
+	gap: 1px;
+	background: var(--px-line);
+	border: 1px solid var(--px-line);
+	border-radius: 10px;
+	overflow-x: auto;
+}
+
+.px-calendar > div {
+	min-height: 90px;
+	padding: 8px;
+	font-size: 12px;
+	background: #fff;
+}
+
+.px-calendar > .px-cal-head {
+	min-height: auto;
+	font-weight: 600;
+	background: #f8f9fa;
+}
+
+.px-chip {
+	display: block;
+	margin-top: 5px;
+	padding: 3px 6px;
+	font-size: 11px;
+	color: #0a58ca;
+	background: #e7f1ff;
+	border-left: 3px solid var(--px-primary);
+	border-radius: 3px;
+}
+

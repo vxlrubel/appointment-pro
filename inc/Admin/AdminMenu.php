@@ -2,6 +2,8 @@
 
 namespace Praxleo\Appointment\Admin;
 
+use Praxleo\Appointment\Rest\Rest;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -96,7 +98,25 @@ class AdminMenu {
 			true
 		);
 
+		$this->localize_admin_script();
+
 		add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 2 );
+	}
+
+	/**
+	 * Pass REST configuration to the admin application.
+	 *
+	 * @return void
+	 */
+	private function localize_admin_script(): void {
+		wp_localize_script(
+			'appointment-pro-admin',
+			'pxAppointmentAdmin',
+			array(
+				'root'  => esc_url_raw( rest_url( Rest::NS . '/' ) ),
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			)
+		);
 	}
 
 	/**
@@ -122,6 +142,8 @@ class AdminMenu {
 			null,
 			true
 		);
+
+		$this->localize_admin_script();
 
 		add_filter( 'script_loader_tag', array( $this, 'add_module_type' ), 10, 2 );
 	}

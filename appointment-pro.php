@@ -54,6 +54,9 @@ spl_autoload_register(
 );
 
 
+register_activation_hook( __FILE__, array( \Praxleo\Appointment\Installer::class, 'activate' ) );
+register_deactivation_hook( __FILE__, array( \Praxleo\Appointment\Installer::class, 'deactivate' ) );
+
 if ( ! function_exists( 'px_appointment_pro' ) ) {
 	/**
 	 * Return the main plugin instance.

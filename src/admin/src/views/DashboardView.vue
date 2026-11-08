@@ -1,31 +1,64 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import { api } from '../api'
+
+const data = ref({ counts: {}, upcoming: [], mail_error: '' })
+const error = ref('')
+
+onMounted(async () => {
+	try {
+		data.value = await api('dashboard')
+	} catch (e) {
+		error.value = e.message
+	}
+})
+</script>
+
 <template>
-    <div class="px-dynamic-grid">
-        <div class="p-3 bg-white border">
-            <p class="mt-0">Today</p>
-            <div class="fs-4">10</div>
-        </div>
-        <div class="p-3 bg-white border">
-            <p class="mt-0">Pending</p>
-            <div class="fs-4">5</div>
-        </div>
-        <div class="p-3 bg-white border">
-            <p class="mt-0">Approved</p>
-            <div class="fs-4">5</div>
-        </div>
-        <div class="p-3 bg-white border">
-            <p class="mt-0">Revenue</p>
-            <div class="fs-4">$50.00</div>
-        </div>
-    </div>
-    <div class="px-card mt-3">
-        <h3 class="mt-0">Upcoming</h3>
-        <table class="px-table">
-            <tr>
-                <td>2026-11-18 09:45:00</td>
-                <td>John doe</td>
-                <td>Fever Treatment</td>
-                <td>Rasel Mahmud</td>
-            </tr>
-        </table>
-    </div>
+	<p v-if="error" class="px-error">{{ error }}</p>
+	<p v-if="data.mail_error" class="px-error">Last mail error: {{ data.mail_error }}</p>
+
+	<div class="px-dynamic-grid">
+		<div class="p-3 bg-white border">
+			<p class="mt-0">Today</p>
+			<div class="fs-4">{{ data.counts.today || 0 }}</div>
+		</div>
+		<div class="p-3 bg-white border">
+			<p class="mt-0">Pending</p>
+			<div class="fs-4">{{ data.counts.pending || 0 }}</div>
+		</div>
+		<div class="p-3 bg-white border">
+			<p class="mt-0">Approved</p>
+			<div class="fs-4">{{ data.counts.approved || 0 }}</div>
+		</div>
+		<div class="p-3 bg-white border">
+			<p class="mt-0">Revenue</p>
+			<div class="fs-4">{{ data.counts.revenue || 0 }}</div>
+		</div>
+	</div>
+
+	<div class="px-card mt-3">
+		<h3 class="mt-0">Upcoming</h3>
+		<table class="px-table">
+			<thead>
+				<tr>
+					<th>When</th>
+					<th>Customer</th>
+					<th>Service</th>
+					<th>Staff</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr v-for="row in data.upcoming" :key="row.appointment.id">
+					<td>{{ row.appointment.start_datetime }}</td>
+					<td>{{ row.customer?.full_name }}</td>
+					<td>{{ row.service?.name }}</td>
+					<td>{{ row.staff?.full_name }}</td>
+				</tr>
+				<tr v-if="!data.upcoming.length">
+					<td colspan="4" class="px-muted">No upcoming appointments.</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 </template>

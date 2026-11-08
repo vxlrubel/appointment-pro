@@ -3,6 +3,9 @@
 namespace Praxleo\Appointment;
 
 use Praxleo\Appointment\Admin\AdminMenu;
+use Praxleo\Appointment\Domain\Appointments;
+use Praxleo\Appointment\Domain\Mailer;
+use Praxleo\Appointment\Rest\Rest;
 
 defined( 'ABSPATH' ) || exit;
 /**
@@ -108,6 +111,28 @@ final class AppointmentPro {
 	 */
 	private function register_hooks(): void {
 		add_action( 'init', array( $this, 'load_textdomain' ) );
+		add_action( 'init', array( Installer::class, 'maybe_install' ), 5 );
+		add_action( 'rest_api_init', array( $this, 'register_rest_routes' ) );
+		add_action( 'px_appointment_hourly', array( $this, 'run_hourly_tasks' ) );
+	}
+
+	/**
+	 * Register the plugin REST API routes.
+	 *
+	 * @return void
+	 */
+	public function register_rest_routes(): void {
+		( new Rest() )->register();
+	}
+
+	/**
+	 * Run hourly maintenance tasks.
+	 *
+	 * @return void
+	 */
+	public function run_hourly_tasks(): void {
+		Appointments::expire_holds();
+		Mailer::send_reminders();
 	}
 
 	/**
