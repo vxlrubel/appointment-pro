@@ -1,5 +1,5 @@
 <template>
   <main>
-    hello world
+    <h2>Dashboard content</h2>
   </main>
 </template>

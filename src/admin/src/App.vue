@@ -11,8 +11,8 @@ import { RouterLink, RouterView } from 'vue-router'
 
 		<div class="px-main">
 			<aside class="px-sidebar">
-				<RouterLink to="/">Home</RouterLink>
-				<RouterLink to="/about">About</RouterLink>
+				<RouterLink to="/">Dashboard</RouterLink>
+				<RouterLink to="/appointment">Appointment</RouterLink>
 			</aside>
 			<div class="px-main-content">
 				<RouterView />

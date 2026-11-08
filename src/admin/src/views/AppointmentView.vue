@@ -11,7 +11,7 @@ const handleClick = () => {
 
 <template>
   <div>
-    <h1>This is an about page</h1>
+    <h2>Services</h2>
 
 	<button @click="handleClick">Click me</button>
   </div>
