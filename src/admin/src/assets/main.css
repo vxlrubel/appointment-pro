@@ -223,3 +223,5 @@ header.px-header {
 	border-radius: 3px;
 }
 
+
+.px-success { color: var(--px-done-color); font-weight: 600; }
