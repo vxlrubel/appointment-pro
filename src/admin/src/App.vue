@@ -34,6 +34,8 @@ watchEffect(() => {
 				<RouterLink to="/notifications">Notifications</RouterLink>
 				<RouterLink to="/custom-fields">Custom fields</RouterLink>
 				<RouterLink to="/settings">Settings</RouterLink>
+				<RouterLink to="/database">Database</RouterLink>
+				<RouterLink to="/document">Documentation</RouterLink>
 			</aside>
 			<div class="px-main-content">
 
