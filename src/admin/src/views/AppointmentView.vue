@@ -1,6 +1,9 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 import { api } from '../api'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
+
+const loading = ref(true)
 
 const selected = ref([])
 async function bulkDelete() {
@@ -37,10 +40,13 @@ function blankForm() {
 }
 
 async function load() {
+  loading.value = true
   try {
     rows.value = await api('appointments')
   } catch (e) {
     error.value = e.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -189,10 +195,16 @@ onMounted(load)
 
 <template>
   <div class="px-toolbar">
-    <button class="px-button px-button-danger" :disabled="!selected.length" @click="bulkDelete">
+    <button
+      class="px-button px-button-danger"
+      :disabled="loading || !selected.length"
+      @click="bulkDelete"
+    >
       Delete selected
     </button>
-    <button class="px-button" type="button" @click="openForm">Add appointment</button>
+    <button class="px-button" type="button" :disabled="loading" @click="openForm">
+      Add appointment
+    </button>
   </div>
 
   <p v-if="error" class="px-error">{{ error }}</p>
@@ -290,7 +302,8 @@ onMounted(load)
     </form>
   </div>
 
-  <div class="px-card">
+  <LoadingSkeleton v-if="loading" :columns="8" label="Loading appointments" />
+  <div v-else class="px-card">
     <table class="px-table">
       <thead>
         <tr>
