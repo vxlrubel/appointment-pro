@@ -1,4 +1,4 @@
-﻿# Appointment Pro feature parity
+# Appointment Pro feature parity
 
 The bundled `praxleo-booking` folder is the reference. Its plugin files remain unchanged. The implementation uses Appointment Pro's namespace, `px_appointment_*` tables/options, and existing blue, pink and teal UI palette.
 
@@ -8,7 +8,7 @@ The bundled `praxleo-booking` folder is the reference. Its plugin files remain u
 | Staff and service/location assignments | Existing forms retained; per-assignment prices exposed |
 | Weekly hours, breaks, days off | Nested breaks survive schedule edits; time-off controls added |
 | Availability, notice limits, booking horizon, conflicts and holds | Existing availability engine retained; public creation validates the offered slot |
-| Public eight-step wizard | `src/public`, compiled into `lib/public` |
+| Public booking wizard | Service-first catalog with location/category filters; mutually filtered location/category fields above the catalog without a location step; `src/public`, compiled into `lib/public` |
 | Shortcode with location/service/staff presets | `[px-appointment location_id="1" service_id="2" staff_id="3"]`; omit presets for customer selection |
 | Gutenberg booking block | Appointment Pro block with preset controls |
 | Extras and quantity limits | Public extras step; duration rechecked before continuing |
@@ -46,3 +46,9 @@ python tests/browser-smoke.py
 The PHP integration suite loads the local WordPress installation, uses temporary booking tables, intercepts mail, mocks provider HTTP responses, and restores settings after the run. It is CLI-only. Browser fixtures exercise the compiled public/admin assets against mock APIs. Set `PX_CHROME` if Chrome is installed in a different location.
 
 Live Stripe/PayPal transactions, actual email delivery, and WooCommerce checkout require verification in the configured site/provider environments. The automated checks do not charge a card or modify live booking records.
+
+The public catalog includes location IDs for enabled staff/service assignments. Loading skeletons cover initial catalog loading, staff options, availability, coupon checks, and payment processing; animations respect reduced-motion preferences.
+
+The date-and-time step uses an always-visible month calendar. A monthly availability endpoint returns actual slot counts, including staff schedules, days off, existing bookings, extras, and booking limits. Dates with zero slots are disabled, and month navigation stays within the booking window.
+
+Bookable service cards remain enabled with both filters set to All. Selecting a service automatically selects its category and retains a compatible selected location, falling back to the first assigned location in the configured location order.
