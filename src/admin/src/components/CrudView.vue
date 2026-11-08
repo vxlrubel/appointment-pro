@@ -1,6 +1,9 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
+import LoadingSkeleton from './LoadingSkeleton.vue'
+
+const loading = ref(true)
 
 const props = defineProps({
   path: { type: String, required: true },
@@ -60,10 +63,13 @@ function optionLabel(field, value) {
 }
 
 async function load() {
+  loading.value = true
   try {
     rows.value = await api('admin/' + props.path)
   } catch (e) {
     error.value = e.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -122,7 +128,11 @@ async function remove(id) {
 }
 
 onMounted(async () => {
-  await loadLookups()
+  try {
+    await loadLookups()
+  } catch (e) {
+    error.value = e.message
+  }
   await load()
 })
 </script>
@@ -132,12 +142,14 @@ onMounted(async () => {
     <button
       v-if="allowDelete"
       class="px-button px-button-danger"
-      :disabled="!selected.length"
+      :disabled="loading || !selected.length"
       @click="bulkDelete"
     >
       Delete selected
     </button>
-    <button v-if="allowAdd" class="px-button" type="button" @click="start">Add</button>
+    <button v-if="allowAdd" class="px-button" type="button" :disabled="loading" @click="start">
+      Add
+    </button>
   </div>
 
   <p v-if="error" class="px-error">{{ error }}</p>
@@ -177,7 +189,12 @@ onMounted(async () => {
     </form>
   </div>
 
-  <div class="px-card">
+  <LoadingSkeleton
+    v-if="loading"
+    :columns="fields.length + 1 + (allowDelete ? 1 : 0)"
+    label="Loading records"
+  />
+  <div v-else class="px-card">
     <table class="px-table">
       <thead>
         <tr>
