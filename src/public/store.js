@@ -91,78 +91,182 @@ export const useBooking = defineStore("booking", {
   },
   actions: {
     async boot(preset) {
+      this.pending.boot = true;
       this.preset = preset;
-      this.config = await api("config");
-      this.locations = await api("locations");
-      if (preset.location_id) {
-        this.location =
-          this.locations.find(
-            (l) => Number(l.id) === Number(preset.location_id),
-          ) || null;
-      }
-      if (this.locations.length === 1) this.location = this.locations[0];
-      if (this.location) await this.loadServices();
-    },
-    async loadServices() {
-      const data = await api("services?location_id=" + this.location.id);
-      this.services = data.services || data;
-      this.categories = data.categories || [];
-      if (this.preset.service_id) {
+      this.error = "";
+      try {
+        const [config, locations, catalog] = await Promise.all([
+          api("config"),
+          api("locations"),
+          api("services"),
+        ]);
+        this.config = config;
+        this.locations = locations;
+        this.services = catalog.services || [];
+        this.categories = catalog.categories || [];
+        this.locationFilterId = locations.some(
+          (location) => Number(location.id) === Number(preset.location_id),
+        )
+          ? Number(preset.location_id)
+          : 0;
         this.service =
           this.services.find(
-            (s) => Number(s.id) === Number(this.preset.service_id),
+            (service) => Number(service.id) === Number(preset.service_id),
           ) || null;
+      } catch (error) {
+        this.error = error.message;
+      } finally {
+        this.pending.boot = false;
       }
-      if (this.services.length === 1) this.service = this.services[0];
-      if (this.service) await this.loadStaff();
     },
-    async pickLocation(loc) {
+    resetSelection() {
+      this.staff = [];
+      this.extras = [];
+      this.fields = [];
+      this.slots = [];
+      this.staffMember = null;
+      this.anyStaff = false;
+      this.slot = null;
       this.extraSel = {};
       this.couponInfo = null;
       this.coupon = "";
       this.custom_fields = {};
-      this.location = loc;
-      this.service = null;
-      this.staffMember = null;
-      this.slot = null;
-      await this.loadServices();
+      this.result = null;
+      this.error = "";
+      this.key = uuid();
+      this.slotRequest++;
+      this.pending.slots = false;
+      this.monthRequest++;
+      this.pending.month = false;
+      this.calendarDays = {};
+      this.calendarMonth = "";
+      this.calendarBounds = {};
     },
-    async pickService(svc) {
-      this.extraSel = {};
-      this.couponInfo = null;
-      this.coupon = "";
-      this.custom_fields = {};
-      this.service = svc;
-      this.staffMember = null;
-      this.slot = null;
+    async pickService(service, locationId = 0) {
+      this.resetSelection();
+      this.service = service;
+      const locations = this.serviceLocations;
+      this.location =
+        locations.find(
+          (location) =>
+            Number(location.id) === Number(locationId || this.locationFilterId),
+        ) ||
+        locations[0] ||
+        null;
+      if (!this.location) {
+        this.error = "Please choose a location for this service.";
+        return;
+      }
+      this.locationFilterId = Number(this.location.id);
+      this.categoryFilterId = String(service.category_id || 0);
       await this.loadStaff();
     },
     async loadStaff() {
-      this.staff = await api(
-        `staff?location_id=${this.location.id}&service_id=${this.service.id}`,
-      );
-      this.extras = await api("extras?service_id=" + this.service.id);
-      this.fields = await api("custom-fields?service_id=" + this.service.id);
-      if (this.preset.staff_id) {
+      if (!this.location || !this.service) return;
+      this.pending.staff = true;
+      this.error = "";
+      try {
+        const query = `location_id=${this.location.id}&service_id=${this.service.id}`;
+        const [staff, extras, fields] = await Promise.all([
+          api(`staff?${query}`),
+          api("extras?service_id=" + this.service.id),
+          api("custom-fields?service_id=" + this.service.id),
+        ]);
+        this.staff = staff;
+        this.extras = extras;
+        this.fields = fields;
         this.staffMember =
-          this.staff.find(
-            (s) => Number(s.id) === Number(this.preset.staff_id),
-          ) || null;
+          staff.find(
+            (member) => Number(member.id) === Number(this.preset.staff_id),
+          ) || (staff.length === 1 ? staff[0] : null);
+      } finally {
+        this.pending.staff = false;
       }
-      if (this.staff.length === 1) this.staffMember = this.staff[0];
     },
     async pickStaff(member, any = false) {
       this.staffMember = any ? null : member;
       this.anyStaff = any;
       this.slot = null;
-      await this.loadSlots();
+      this.slots = [];
+      this.calendarDays = {};
+    },
+    async loadCalendar(
+      month = this.calendarMonth ||
+        (this.config.today || this.date).slice(0, 7),
+    ) {
+      if (!this.location || !this.service) return;
+      const request = ++this.monthRequest;
+      this.slotRequest++;
+      this.pending.slots = false;
+      this.pending.month = true;
+      this.error = "";
+      this.calendarMonth = month;
+      this.calendarDays = {};
+      this.slot = null;
+      this.slots = [];
+      let selected = "";
+      try {
+        const staffId = this.anyStaff ? 0 : this.staffMember?.id || 0;
+        const extras = encodeURIComponent(JSON.stringify(this.extrasList));
+        const data = await api(
+          `availability/dates?location_id=${this.location.id}&service_id=${this.service.id}&staff_id=${staffId}&month=${month}&extras=${extras}`,
+        );
+        if (request !== this.monthRequest) return;
+        this.calendarDays = data.dates;
+        this.calendarBounds = {
+          today: data.today,
+          min_date: data.min_date,
+          max_date: data.max_date,
+        };
+        selected =
+          data.dates[this.date] > 0
+            ? this.date
+            : Object.keys(data.dates).find((date) => data.dates[date] > 0) ||
+              "";
+        this.date = selected;
+      } catch (error) {
+        if (request === this.monthRequest) {
+          this.error = error.message;
+          this.date = "";
+        }
+      } finally {
+        if (request === this.monthRequest) this.pending.month = false;
+      }
+      if (request === this.monthRequest && selected) {
+        try {
+          await this.loadSlots();
+        } catch {
+          /* Error feedback comes from loadSlots. */
+        }
+      }
     },
     async loadSlots() {
-      const extras = JSON.stringify(this.extrasList);
-      const staffId = this.anyStaff ? 0 : this.staffMember?.id || 0;
-      this.slots = await api(
-        `availability?location_id=${this.location.id}&service_id=${this.service.id}&staff_id=${staffId}&date=${this.date}&extras=${encodeURIComponent(extras)}`,
-      );
+      if (!this.location || !this.service) return;
+      const request = ++this.slotRequest;
+      this.pending.slots = true;
+      this.error = "";
+      try {
+        const extras = encodeURIComponent(JSON.stringify(this.extrasList));
+        const staffId = this.anyStaff ? 0 : this.staffMember?.id || 0;
+        const slots = await api(
+          `availability?location_id=${this.location.id}&service_id=${this.service.id}&staff_id=${staffId}&date=${this.date}&extras=${extras}`,
+        );
+        if (request === this.slotRequest) {
+          this.slots = slots;
+          if (Object.hasOwn(this.calendarDays, this.date))
+            this.calendarDays[this.date] = slots.length;
+          if (!slots.length) this.slot = null;
+        }
+      } catch (error) {
+        if (request !== this.slotRequest) return;
+        if (request === this.slotRequest) {
+          this.slots = [];
+          this.error = error.message;
+        }
+        throw error;
+      } finally {
+        if (request === this.slotRequest) this.pending.slots = false;
+      }
     },
     pickSlot(slot) {
       this.slot = slot;
@@ -173,6 +277,9 @@ export const useBooking = defineStore("booking", {
       }
     },
     async applyCoupon() {
+      if (this.pending.coupon) return;
+      this.pending.coupon = true;
+      this.couponInfo = null;
       this.error = "";
       try {
         this.couponInfo = await api("coupons/validate", {
@@ -186,6 +293,8 @@ export const useBooking = defineStore("booking", {
       } catch (e) {
         this.couponInfo = null;
         this.error = e.message;
+      } finally {
+        this.pending.coupon = false;
       }
     },
     async submit(method) {
