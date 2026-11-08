@@ -1,4 +1,5 @@
 <script setup>
+import BookingSkeleton from "../components/BookingSkeleton.vue";
 import { useRouter } from "vue-router";
 import { useBooking } from "../store";
 const store = useBooking();
@@ -31,15 +32,30 @@ async function next() {
     <label v-for="ex in store.extras" :key="ex.id" class="pxb-choice">
       {{ ex.title }} — {{ store.config.currency }} {{ ex.price }}
       <input
+        :disabled="store.pending.slots"
         type="number"
         min="0"
         :max="ex.max_quantity"
         v-model.number="store.extraSel[ex.id]"
       />
     </label>
+    <BookingSkeleton
+      v-if="store.pending.slots"
+      variant="slots"
+      label="Checking availability"
+      embedded
+    />
     <div class="pxb-bar">
-      <button class="pxb-btn ghost" @click="router.push('/time')">Back</button>
-      <button class="pxb-btn" @click="next">Continue</button>
+      <button
+        class="pxb-btn ghost"
+        :disabled="store.pending.slots"
+        @click="router.push('/time')"
+      >
+        Back
+      </button>
+      <button class="pxb-btn" :disabled="store.pending.slots" @click="next">
+        Continue
+      </button>
     </div>
   </div>
 </template>
