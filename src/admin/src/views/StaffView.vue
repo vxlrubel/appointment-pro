@@ -1,6 +1,9 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import LoadingSkeleton from '../components/LoadingSkeleton.vue'
+
+const loading = ref(true)
 
 const selected = ref([])
 async function bulkDelete() {
@@ -44,12 +47,15 @@ const saving = ref(false)
 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 async function load() {
+  loading.value = true
   try {
     rows.value = await api('admin/staff')
     locations.value = await api('admin/locations')
     allServices.value = await api('admin/services')
   } catch (e) {
     error.value = e.message
+  } finally {
+    loading.value = false
   }
 }
 
@@ -152,10 +158,14 @@ onMounted(load)
 
 <template>
   <div class="px-toolbar">
-    <button class="px-button px-button-danger" :disabled="!selected.length" @click="bulkDelete">
+    <button
+      class="px-button px-button-danger"
+      :disabled="loading || !selected.length"
+      @click="bulkDelete"
+    >
       Delete selected
     </button>
-    <button class="px-button" type="button" @click="start">Add</button>
+    <button class="px-button" type="button" :disabled="loading" @click="start">Add</button>
   </div>
 
   <p v-if="error" class="px-error">{{ error }}</p>
@@ -298,7 +308,8 @@ onMounted(load)
     </div>
   </div>
 
-  <div class="px-card">
+  <LoadingSkeleton v-if="loading" :columns="6" label="Loading staff" />
+  <div v-else class="px-card">
     <table class="px-table">
       <thead>
         <tr>
