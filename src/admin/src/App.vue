@@ -13,6 +13,7 @@ import { RouterLink, RouterView } from 'vue-router'
 			<aside class="px-sidebar">
 				<RouterLink to="/">Dashboard</RouterLink>
 				<RouterLink to="/appointment">Appointment</RouterLink>
+				<RouterLink to="/service">Services</RouterLink>
 			</aside>
 			<div class="px-main-content">
 
