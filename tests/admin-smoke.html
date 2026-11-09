@@ -33,7 +33,18 @@ window.addEventListener('load',async()=>{try{
  await waitFor(()=>document.querySelector('form'));
  nav('Settings');await waitFor(()=>document.querySelector('[aria-label="Loading settings"]'));await waitFor(()=>document.querySelector('input[type="password"]'));
  nav('Database');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('Export CSV'));
- nav('Documentation');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('[px-appointment]'));
+ nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content[aria-busy="true"]'));
+ const docs=document.querySelector('.px-docs-content');
+ if(docs.textContent.includes('Import CSV'))throw new Error('Documentation did not start as a partial reveal');
+ await waitFor(()=>docs.textContent.includes('What this plugin does'));
+ if(!docs.querySelector('.px-docs-cursor'))throw new Error('Typing cursor is missing');
+ Array.from(document.querySelectorAll('button')).find(button=>button.textContent.trim()==='Show all').click();
+ await waitFor(()=>docs.getAttribute('aria-busy')==='false');
+ if(!docs.textContent.includes('[px-appointment]') || !docs.textContent.includes('Import CSV') || docs.querySelector('[hidden]') || docs.querySelector('.px-docs-cursor'))throw new Error('Show all did not restore complete formatted documentation');
+ nav('Dashboard');await waitFor(()=>document.querySelector('[aria-label="Loading dashboard"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
+ nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content[aria-busy="true"]'));
+ // Leave while the timer is active to exercise cleanup.
+
  nav('Payments');await waitFor(()=>document.querySelector('[aria-label="Loading payments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  nav('Calendar');await waitFor(()=>document.querySelector('[aria-label="Loading calendar"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  nav('Appointments');await waitFor(()=>document.querySelector('[aria-label="Loading appointments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
