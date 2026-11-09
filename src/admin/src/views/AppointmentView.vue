@@ -363,7 +363,7 @@ onMounted(load)
             </button>
           </td>
         </tr>
-        <tr v-if="!rows.length">
+        <tr v-if="!rows.length" class="px-table-row" style="--px-table-row-index: 1">
           <td colspan="7" class="px-muted">No appointments yet.</td>
         </tr>
       </tbody>

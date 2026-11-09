@@ -48,7 +48,7 @@ onMounted(async () => {
       <h3 class="mt-0">Upcoming</h3>
       <table class="px-table">
         <thead>
-          <tr>
+          <tr class="px-table-row" style="--px-table-row-index: 0">
             <th>When</th>
             <th>Customer</th>
             <th>Service</th>
@@ -56,13 +56,13 @@ onMounted(async () => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in data.upcoming" :key="row.appointment.id">
+          <tr v-for="(row, index) in data.upcoming" :key="row.appointment.id" class="px-table-row" :style="{ '--px-table-row-index': index + 1 }">
             <td>{{ row.appointment.start_datetime }}</td>
             <td>{{ row.customer?.full_name }}</td>
             <td>{{ row.service?.name }}</td>
             <td>{{ row.staff?.full_name }}</td>
           </tr>
-          <tr v-if="!data.upcoming.length">
+          <tr v-if="!data.upcoming.length" class="px-table-row" style="--px-table-row-index: 1">
             <td colspan="4" class="px-muted">No upcoming appointments.</td>
           </tr>
         </tbody>

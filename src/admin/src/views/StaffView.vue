@@ -312,7 +312,7 @@ onMounted(load)
   <div v-else class="px-card">
     <table class="px-table">
       <thead>
-        <tr>
+        <tr class="px-table-row" style="--px-table-row-index: 0">
           <th>
             <input
               type="checkbox"
@@ -328,7 +328,7 @@ onMounted(load)
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.id">
+        <tr v-for="(row, index) in rows" :key="row.id" class="px-table-row" :style="{ '--px-table-row-index': index + 1 }">
           <td>
             <input v-model="selected" type="checkbox" :value="row.id" aria-label="Select record" />
           </td>
@@ -340,7 +340,7 @@ onMounted(load)
             <button class="px-button-outline approve" type="button" @click="edit(row)">Edit</button>
           </td>
         </tr>
-        <tr v-if="!rows.length">
+        <tr v-if="!rows.length" class="px-table-row" style="--px-table-row-index: 1">
           <td colspan="5" class="px-muted">No staff yet.</td>
         </tr>
       </tbody>

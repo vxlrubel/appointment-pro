@@ -197,7 +197,7 @@ onMounted(async () => {
   <div v-else class="px-card">
     <table class="px-table">
       <thead>
-        <tr>
+        <tr class="px-table-row" style="--px-table-row-index: 0">
           <th v-if="allowDelete">
             <input
               type="checkbox"
@@ -210,7 +210,7 @@ onMounted(async () => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.id">
+        <tr v-for="(row, index) in rows" :key="row.id" class="px-table-row" :style="{ '--px-table-row-index': index + 1 }">
           <td v-if="allowDelete">
             <input v-model="selected" type="checkbox" :value="row.id" aria-label="Select record" />
           </td>
@@ -232,7 +232,7 @@ onMounted(async () => {
             </button>
           </td>
         </tr>
-        <tr v-if="!rows.length">
+        <tr v-if="!rows.length" class="px-table-row" style="--px-table-row-index: 1">
           <td :colspan="fields.length + 1" class="px-muted">No records yet.</td>
         </tr>
       </tbody>

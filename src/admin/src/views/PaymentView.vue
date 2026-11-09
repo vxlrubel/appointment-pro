@@ -26,7 +26,7 @@ onMounted(async () => {
   <div v-else class="px-card">
     <table class="px-table">
       <thead>
-        <tr>
+        <tr class="px-table-row" style="--px-table-row-index: 0">
           <th>ID</th>
           <th>Type</th>
           <th>Status</th>
@@ -35,14 +35,14 @@ onMounted(async () => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in rows" :key="row.id">
+        <tr v-for="(row, index) in rows" :key="row.id" class="px-table-row" :style="{ '--px-table-row-index': index + 1 }">
           <td>{{ row.id }}</td>
           <td>{{ row.type }}</td>
           <td>{{ row.status }}</td>
           <td>{{ row.amount }} {{ row.currency }}</td>
           <td>{{ row.created_at }}</td>
         </tr>
-        <tr v-if="!rows.length">
+        <tr v-if="!rows.length" class="px-table-row" style="--px-table-row-index: 1">
           <td colspan="5" class="px-muted">No payments yet.</td>
         </tr>
       </tbody>
