@@ -7,6 +7,18 @@
 	--px-approve-color: #2391FF;
 	--px-cancel-color: #F70063;
 	--px-done-color: #359FA0;
+	--px-warning-color: #FF8C52;
+	--px-success-color: #198754;
+	--px-success-color-light: hsl(152, 69%, 97%);
+	--px-space: 15px;
+}
+.px-success {
+	color: var(--px-success-color);
+	font-weight: 600;
+	padding: var(--px-space);
+	border: 1px solid var(--px-success-color);
+	border-radius: 4px;
+	background: var(--px-success-color-light);
 }
 .mt-0{
 	margin-top: 0;

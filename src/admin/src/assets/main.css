@@ -224,7 +224,7 @@ header.px-header {
 }
 
 
-.px-success { color: var(--px-done-color); font-weight: 600; }
+
 
 /* Loading placeholders mirror the admin cards without showing empty data. */
 .px-sr-only {
