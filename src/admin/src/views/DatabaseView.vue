@@ -140,50 +140,71 @@ async function importCsv() {
 }
 </script>
 <template>
-  <p v-if="error" class="px-error">{{ error }}</p>
-  <p v-if="message" class="px-success">{{ message }}</p>
-  <div class="px-card">
-    <h3>01. Reset Database</h3>
-    <p class="px-muted">
-      Removes all booking data (locations, services, categories, staff, customers, appointments,
-      extras, coupons, custom fields). Notification templates are not deleted.
-    </p>
-    <button class="px-button px-button-danger" :disabled="!!busy" @click="resetDb">
-      {{ busy === 'reset' ? 'Resetting...' : 'Reset Database' }}
-    </button>
-  </div>
-  <div class="px-card">
-    <h3>02. Insert Demo Content</h3>
-    <p class="px-muted">
-      Clears booking data, then inserts 3 locations, 5 categories, 10 services, 3 staff (with hours
-      and service links), 3 extras, 2 coupons (SAVE10, WELCOME20), 3 custom fields, 5 customers, and
-      5 appointments.
-    </p>
-    <button class="px-button" :disabled="!!busy" @click="insertDemo">
-      {{ busy === 'demo' ? 'Inserting...' : 'Insert Demo Content' }}
-    </button>
-  </div>
-  <div class="px-card">
-    <h3>03. Export CSV</h3>
-    <p class="px-muted">
-      Download all booking tables as one CSV so you can move data to another WordPress site. IDs and
-      links between staff, services, and appointments are kept.
-    </p>
-    <button class="px-button" :disabled="!!busy" @click="exportCsv">
-      {{ busy === 'export' ? 'Exporting...' : 'Export CSV' }}
-    </button>
-  </div>
-  <div class="px-card">
-    <h3>04. Import CSV</h3>
-    <p class="px-muted">
-      Upload a Appointment Pro export. Tables in the file replace current rows. Notification
-      templates are imported when present; missing events are seeded after import.
-    </p>
-    <div class="px-row">
-      <input type="file" accept=".csv,text/csv" :disabled="!!busy" @change="onFile" />
-      <button class="px-button" :disabled="!!busy || !importFile" @click="importCsv">
-        {{ busy === 'import' ? 'Importing...' : 'Import CSV' }}
-      </button>
+<p v-if="error" class="px-error">{{ error }}</p>
+<p v-if="message" class="px-success">{{ message }}</p>
+
+
+<div class="px-dynamic-grid" style="--min-width: 300px">
+    <div class="px-grid-item" style="--grid-item-index: 0">
+        <h3 class="mt-0">01. Reset Database</h3>
+        <div class="px-grid-body">
+            <p class="px-muted mt-0">
+                Removes all booking data (locations, services, categories, staff, customers, appointments, extras,
+                coupons, custom fields). Notification templates are not deleted.
+            </p>
+        </div>
+        <div class="px-grid-footer">
+            <button class="px-button px-button-danger" :disabled="!!busy" @click="resetDb">
+                {{ busy === 'reset' ? 'Resetting...' : 'Reset Database' }}
+            </button>
+        </div>
     </div>
-  </div>
+    <div class="px-grid-item" style="--grid-item-index: 1">
+        <h3 class="mt-0">02. Insert Demo Content</h3>
+        <div class="px-grid-body">
+            <p class="px-muted mt-0">
+                Clears booking data, then inserts 3 locations, 5 categories, 10 services, 3 staff (with hours and
+                service links), 3 extras, 2 coupons (SAVE10, WELCOME20), 3 custom fields, 5 customers, and 5
+                appointments.
+            </p>
+        </div>
+        <div class="px-grid-footer">
+            <button class="px-button" :disabled="!!busy" @click="insertDemo">
+                {{ busy === 'demo' ? 'Inserting...' : 'Insert Demo Content' }}
+            </button>
+        </div>
+    </div>
+    <div class="px-grid-item" style="--grid-item-index: 2">
+        <h3 class="mt-0">03. Export CSV</h3>
+        <div class="px-grid-body">
+            <p class="px-muted mt-0">
+                Download all booking tables as one CSV so you can move data to another WordPress site. IDs and links
+                between staff, services, and appointments are kept.
+            </p>
+        </div>
+        <div class="px-grid-footer">
+            <button class="px-button" :disabled="!!busy" @click="exportCsv">
+                {{ busy === 'export' ? 'Exporting...' : 'Export CSV' }}
+            </button>
+        </div>
+    </div>
+    <div class="px-grid-item" style="--grid-item-index: 3">
+        <h3 class="mt-0">04. Import CSV</h3>
+        <div class="px-grid-body">
+            <p class="px-muted mt-0">
+                Upload a Appointment Pro export. Tables in the file replace current rows. Notification templates are
+                imported when present; missing events are seeded after import.
+            </p>
+
+            <input type="file" accept=".csv,text/csv" :disabled="!!busy" @change="onFile" />
+        </div>
+        <div class="px-grid-footer">
+            <button class="px-button" :disabled="!!busy || !importFile" @click="importCsv">
+                {{ busy === 'import' ? 'Importing...' : 'Import CSV' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+
 </template>
