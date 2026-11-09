@@ -148,3 +148,16 @@ button.px-button-outline.done:hover {
 	}
 }
 
+
+
+/* animation section */
+
+@keyframes tableRowFadeIn {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+.px-table-row {
+	opacity: 0;
+	animation: tableRowFadeIn 0.15s ease forwards;
+	animation-delay: calc(var(--px-table-row-index) * 0.05s);
+}
