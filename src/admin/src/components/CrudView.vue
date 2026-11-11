@@ -211,17 +211,25 @@ onMounted(async () => {
 
           <textarea v-if="field.type === 'textarea'" v-model="form[field.key]" rows="4"></textarea>
 
-          <select v-else-if="field.type === 'bool'" v-model.number="form[field.key]">
+          <PxSelect
+            :aria-label="field.label"
+            v-else-if="field.type === 'bool'"
+            v-model.number="form[field.key]"
+          >
             <option :value="1">Yes</option>
             <option :value="0">No</option>
-          </select>
+          </PxSelect>
 
-          <select v-else-if="field.type === 'select'" v-model="form[field.key]">
+          <PxSelect
+            :aria-label="field.label"
+            v-else-if="field.type === 'select'"
+            v-model="form[field.key]"
+          >
             <option value="">{{ field.placeholder || 'Select ' + field.label }}</option>
             <option v-for="option in optionsFor(field)" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
-          </select>
+          </PxSelect>
 
           <input v-else v-model="form[field.key]" :type="field.type || 'text'" :step="field.step" />
         </div>
