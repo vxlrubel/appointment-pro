@@ -37,6 +37,24 @@ class Rest {
 		$pub  = array( $this, 'public_perm' );
 		$adm  = array( $this, 'admin_perm' );
 
+        register_rest_route( self::NS, '/admin/business-hours', array(
+            array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => static fn() => \Praxleo\Appointment\Domain\BusinessHours::all() ),
+            array( 'methods' => 'POST', 'permission_callback' => $adm, 'callback' => static fn( $req ) => \Praxleo\Appointment\Domain\BusinessHours::save( $req->get_json_params() ) ),
+        ) );
+        register_rest_route( self::NS, '/admin/affiliates', array(
+            array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => static fn() => \Praxleo\Appointment\Domain\Affiliates::all() ),
+            array( 'methods' => 'POST', 'permission_callback' => $adm, 'callback' => static fn( $req ) => \Praxleo\Appointment\Domain\Affiliates::save( (array) $req->get_json_params() ) ),
+        ) );
+        register_rest_route( self::NS, '/admin/affiliates/bulk-delete', array( 'methods' => 'POST', 'permission_callback' => $adm, 'callback' => static function( $req ) {
+            $ids = $req->get_param( 'ids' );
+            if ( ! is_array( $ids ) || ! $ids || array_filter( $ids, static fn( $id ) => ! is_scalar( $id ) || is_bool( $id ) || ! ctype_digit( (string) $id ) || (int) $id < 1 ) ) { return new WP_Error( 'invalid', 'Select valid affiliate IDs.', array( 'status' => 400 ) ); }
+            return \Praxleo\Appointment\Domain\Affiliates::delete( $ids );
+        } ) );
+        register_rest_route( self::NS, '/admin/affiliates/(?P<id>\d+)', array(
+            array( 'methods' => 'PUT', 'permission_callback' => $adm, 'callback' => static fn( $req ) => \Praxleo\Appointment\Domain\Affiliates::save( (array) $req->get_json_params(), (int) $req['id'] ) ),
+            array( 'methods' => 'DELETE', 'permission_callback' => $adm, 'callback' => static fn( $req ) => \Praxleo\Appointment\Domain\Affiliates::delete( array( (int) $req['id'] ) ) ),
+        ) );
+        register_rest_route( self::NS, '/admin/affiliates/(?P<id>\d+)/bookings', array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => static fn( $req ) => \Praxleo\Appointment\Domain\Affiliates::bookings( (int) $req['id'] ) ) );
 		$this->crud( 'locations', 'locations', $adm );
 		$this->crud( 'services', 'services', $adm );
 		$this->crud( 'categories', 'service_categories', $adm );
