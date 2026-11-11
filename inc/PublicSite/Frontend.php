@@ -8,6 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Frontend {
 	public function boot() {
 		add_shortcode( 'px-appointment', array( $this, 'shortcode' ) );
+		add_shortcode( 'px-appointment-service', array( $this, 'service_shortcode' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'maybe_assets' ) );
 		add_action( 'init', array( $this, 'handle_cancel' ) );
 	}
@@ -15,7 +16,7 @@ class Frontend {
 	public function maybe_assets() {
 		global $post;
 		$need = false;
-		if ( $post && has_shortcode( $post->post_content, 'px-appointment' ) ) {
+		if ( $post && ( has_shortcode( $post->post_content, 'px-appointment' ) || has_shortcode( $post->post_content, 'px-appointment-service' ) ) ) {
 			$need = true;
 		}
 		if ( $post && function_exists( 'has_block' ) && has_block( 'px-appointment/booking', $post ) ) {
@@ -71,6 +72,22 @@ class Frontend {
 		);
 		return self::mount( $atts );
 	}
+
+    /** Render an independently mounted service booking button; never emit unescaped attributes. */
+    public function service_shortcode( $atts ) {
+        $atts = shortcode_atts( array( 'id' => 0, 'text' => '' ), $atts, 'px-appointment-service' );
+        $id = absint( $atts['id'] );
+        $service = $id ? \Praxleo\Appointment\Database\Repository::find( 'services', $id ) : null;
+        if ( ! $service || empty( $service['enabled'] ) ) { return ''; }
+        self::enqueue();
+        $text = trim( (string) $atts['text'] );
+        if ( '' === $text ) { $text = $service['name']; }
+        return sprintf(
+            '<button type="button" class="pxb-btn pxb-service-booking-button" data-px-service-booking="%d" aria-haspopup="dialog" aria-expanded="false">%s</button>',
+            $id,
+            esc_html( $text )
+        );
+    }
 
 	public static function render_block( $attrs ) {
 		self::enqueue();
