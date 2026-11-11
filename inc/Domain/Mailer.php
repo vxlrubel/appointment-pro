@@ -195,7 +195,7 @@ class Mailer {
 			'{location}'      => $hydrated['location']['name'] ?? '',
 			'{date}'          => $local->format( 'Y-m-d' ),
 			'{time}'          => $local->format( 'H:i' ),
-			'{price}'         => Settings::get( 'currency' ) . ' ' . $amount,
+			'{price}'         => Currency::format( $amount ),
 			'{cancel_url}'    => $cancel,
 		);
 	}
