@@ -135,13 +135,9 @@ class Availability {
 	 */
 	private static function staff_day_slots( array $staff, array $service, int $location_id, DateTimeImmutable $day, int $duration, int $slot_len, DateTimeZone $timezone ): array {
 		$weekday   = (int) $day->format( 'w' );
-		$schedules = Repository::all(
-			'staff_schedule',
-			array(
-				'staff_id' => (int) $staff['id'],
-				'weekday'  => $weekday,
-			)
-		);
+		$custom = Repository::all( 'staff_schedule', array( 'staff_id' => (int) $staff['id'] ) );
+		$schedules = $custom ?: BusinessHours::all();
+		$schedules = array_values( array_filter( $schedules, static fn( $row ) => (int) $row['weekday'] === $weekday ) );
 
 		$schedules = array_values(
 			array_filter(
@@ -164,7 +160,7 @@ class Availability {
 		foreach ( $schedules as $schedule ) {
 			$start   = self::combine( $day, $schedule['start_time'], $timezone );
 			$end     = self::combine( $day, $schedule['end_time'], $timezone );
-			$breaks  = Repository::all( 'staff_breaks', array( 'schedule_id' => (int) $schedule['id'] ) );
+			$breaks  = $custom ? Repository::all( 'staff_breaks', array( 'schedule_id' => (int) $schedule['id'] ) ) : $schedule['breaks'];
 			$breaks_iv = array();
 
 			foreach ( $breaks as $break ) {
