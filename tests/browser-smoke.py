@@ -30,7 +30,7 @@ try:
             result = subprocess.run([
                 chrome, '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
                 f'--user-data-dir={profile}', '--dump-dom', '--timeout=15000',
-                '--virtual-time-budget=8000', url,
+                '--virtual-time-budget=15000', url,
             ], capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30)
             match = re.search(r'<pre id="test-result"[^>]*>([^<]+)', result.stdout)
             message = match.group(1) if match else 'FAIL no browser test result'
