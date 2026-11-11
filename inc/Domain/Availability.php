@@ -30,6 +30,7 @@ class Availability {
 		$service_id  = (int) ( $args['service_id'] ?? 0 );
 		$staff_id    = (int) ( $args['staff_id'] ?? 0 );
 		$date        = sanitize_text_field( $args['date'] ?? '' );
+		if ( Holidays::is_closed( $date ) ) { return array(); }
 		$extras      = isset( $args['extras'] ) && is_array( $args['extras'] ) ? $args['extras'] : array();
 
 		$service = Repository::find( 'services', $service_id );
@@ -328,6 +329,10 @@ class Availability {
 	public static function has_conflict( int $staff_id, string $start, string $end, int $exclude_id = 0 ): bool {
 		global $wpdb;
 
+		$timezone = Mailer::timezone();
+		$day = ( new DateTimeImmutable( $start, new DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone )->setTime( 0, 0 );
+		$last = ( new DateTimeImmutable( $end, new DateTimeZone( 'UTC' ) ) )->modify( '-1 second' )->setTimezone( $timezone )->setTime( 0, 0 );
+		for ( ; $day <= $last; $day = $day->modify( '+1 day' ) ) { if ( Holidays::is_closed( $day->format( 'Y-m-d' ) ) ) { return true; } }
 		$table = Schema::table( 'appointments' );
 		$now   = Repository::now();
 		$sql   = "SELECT id FROM $table WHERE staff_id = %d AND start_datetime < %s AND end_datetime > %s
