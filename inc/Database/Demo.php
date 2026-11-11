@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Demo {
 	public static function data_tables(): array {
-		return array( 'payments', 'customer_appointments', 'appointments', 'coupon_services', 'coupons', 'extras', 'custom_fields', 'staff_breaks', 'staff_days_off', 'staff_schedule', 'staff_services', 'staff', 'services', 'service_categories', 'locations', 'customers', 'holidays' );
+		return array( 'payments', 'customer_appointments', 'appointments', 'coupon_services', 'coupons', 'extras', 'custom_fields', 'staff_breaks', 'staff_days_off', 'staff_schedule', 'staff_services', 'staff', 'services', 'service_categories', 'locations', 'customers', 'holidays', 'business_hours', 'affiliates' );
 	}
 
 	private static function empty_tables(): void {
