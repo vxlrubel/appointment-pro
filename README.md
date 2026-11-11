@@ -270,11 +270,33 @@ Under **Customer**, an optional custom email receives an additional copy of cust
 
 Delivery uses WordPress mail. Reminders and expired hold cleanup run through the hourly WordPress cron hook `px_appointment_hourly`; ensure WordPress cron is running on the site.
 
+### Business Hours and staff overrides
+
+Open **Business Hours**, immediately above Settings, to configure default weekly shifts and breaks. Use **Add shift** or **Edit shift**, choose a weekday and optional location, set opening/closing times, and add breaks. Save the shift, then choose **Save business hours** to publish the weekly schedule. Days without shifts are closed; an empty business schedule supplies no availability.
+
+Staff with no saved personal weekly hours inherit Business Hours. Once a staff member has any personal shifts, that personal schedule overrides the entire business week. Remove all personal shifts and save hours to restore inheritance. Location assignments, holidays, time off, existing bookings, and booking limits still apply to inherited hours.
+
+### Affiliate Programs
+
+Open **Affiliate Programs**, choose **Add affiliate**, and enter the partner name and the URL of a published booking page on this site. Each link receives a unique `px_aff` query parameter; existing URL parameters and booking page fragments are retained. Share or copy that generated link.
+
+Bookings made in that link's booking flow store the referral code on the appointment. Counts include all attributed appointments, including pending and cancelled bookings. Click an affiliate name to expand customer, service, staff, date, status, and amount details. Disabling a link stops new attribution. Deleting a link clears its attribution while preserving the appointments and payments. Tracking uses the current booking page URL and does not add tracking cookies or a commission/payment system.
+
+### Currency display
+
+Select the currency under **Settings > Company Settings**. `PxCurrency` displays its symbol before every monetary amount with exactly two decimal places in both applications, including dashboard revenue, catalog prices, extras, checkout, payment history, and affiliate details. Payment rows retain their recorded currency; email price placeholders use the same symbol convention. Percentage coupons remain percentages.
+
+### Reusable form modals
+
+Administrative create/edit forms use **PxModal**, teleported to the document body. It supplies a close control, Cancel, a configurable primary action, native form validation, focus trapping/restoration, background locking, and nested dialogs. Settings and recipient preferences remain persistent configuration forms.
+
+For development, import `src/admin/src/components/PxModal.vue` with `open`, `heading`, `primaryText`, `busy`, and `formId` props. Put the form in its default slot, give it the matching ID, and handle `close`. The primary footer button submits that form. `submit` can instead handle an action without `formId`; `hideFooter` allows a custom footer flow. Shared `src/shared/PxCurrency.vue` accepts `amount` and optional `currency` props, using the provided configured currency when omitted.
+
 ### Clinic holidays
 
-Open **Holiday**, immediately above Settings. The FullCalendar month view opens by default. Click a date (or **Add holiday**), then enter a name, description, and date. **Repeat yearly** and **Block bookings** are enabled by default. Turn off yearly recurrence for a one-time closure, or disable blocking to retain a holiday record without closing the date.
+Open **Holiday** in the admin sidebar. The FullCalendar month view opens by default. Click a date (or **Add holiday**), then enter a name, description, and date. **Repeat yearly** and **Block bookings** are enabled by default. Turn off yearly recurrence for a one-time closure, or disable blocking to retain a holiday record without closing the date.
 
-Saved holidays apply to every location in the company timezone. Customers cannot select these dates, and the server also rejects new bookings or reschedules that overlap a closure. Existing appointments are retained. Click a calendar event or **Edit** in the holiday table to change it; **Delete** uses the shared confirmation popup. Holidays are included in CSV transfers and removed by database reset/demo replacement.
+Saved holidays apply to every location in the company timezone. Customers cannot select these dates, and the server also rejects new bookings or reschedules that overlap a closure. Existing appointments are retained. Click a calendar event or **Edit** in the holiday table to change it; **Delete** uses the shared confirmation popup. Holidays, Business Hours, and affiliate links/attribution are included in CSV transfers and cleared by database reset/demo replacement.
 
 ### Database tools and uninstall
 
