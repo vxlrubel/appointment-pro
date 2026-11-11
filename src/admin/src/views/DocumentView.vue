@@ -217,6 +217,12 @@ onBeforeUnmount(() => {
         two decimals. Create/edit forms open in reusable dialogs with close, Cancel, and save
         controls.
       </p>
+      <p>
+        Select fields use <strong>PxSelect</strong>: choose with the mouse or keyboard, type to find
+        an option, and use Escape to dismiss the list. Long lists scroll within a 300px limit and
+        open above the control when space below is limited. Required selections still validate
+        before saving.
+      </p>
       <h3>6. Demo data</h3>
       <p>
         Open <strong>Database</strong> to reset booking tables or insert medical demo content: 30
