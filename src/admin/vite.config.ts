@@ -45,6 +45,7 @@ export default defineConfig(({ command }) => ({
   },
   resolve: {
     alias: {
+      'vue': path.resolve(import.meta.dirname, 'node_modules/vue'),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
