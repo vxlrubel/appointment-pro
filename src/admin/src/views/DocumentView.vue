@@ -191,6 +191,24 @@ onBeforeUnmount(() => {
         default. You can edit or delete holidays using the calendar or table. Closed dates apply
         across locations in the company timezone; existing appointments remain unchanged.
       </p>
+      <h3>Business Hours, affiliates, and currency</h3>
+      <p>
+        Use <strong>Business Hours</strong> above Settings to configure default weekly shifts and
+        breaks. Save each shift and then save business hours. Staff without personal hours inherit
+        this schedule; a personal schedule overrides the entire business week. Holidays and time off
+        still close dates.
+      </p>
+      <p>
+        Under <strong>Affiliate Programs</strong>, create a named link to a booking page on this
+        site. Share its generated referral URL, then expand the affiliate name to see attributed
+        appointments. Counts include pending and cancelled bookings. Disabling stops new
+        attribution; deleting retains appointments.
+      </p>
+      <p>
+        Select a currency in <strong>Settings</strong>. Monetary amounts show its symbol followed by
+        two decimals. Create/edit forms open in reusable dialogs with close, Cancel, and save
+        controls.
+      </p>
       <h3>6. Demo data</h3>
       <p>
         Open <strong>Database</strong> to reset booking tables or insert medical demo content: 30
