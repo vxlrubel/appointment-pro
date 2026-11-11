@@ -15,6 +15,23 @@ async function pick(m, any) {
 <template>
   <div class="pxb-card">
     <h3>Choose staff</h3>
+    <label
+      v-if="store.lockedServiceId && store.serviceLocations.length > 1"
+      class="pxb-service-location"
+      >Location
+      <select
+        :value="store.location?.id"
+        @change="store.pickService(store.service, Number($event.target.value))"
+      >
+        <option
+          v-for="location in store.serviceLocations"
+          :key="location.id"
+          :value="location.id"
+        >
+          {{ location.name }}
+        </option>
+      </select>
+    </label>
     <button
       v-if="store.staff.length"
       class="pxb-choice"
@@ -33,7 +50,7 @@ async function pick(m, any) {
     <p v-if="!store.staff.length" class="pxb-muted">
       No staff are available for this service at this location.
     </p>
-    <div class="pxb-bar">
+    <div v-if="!store.lockedServiceId" class="pxb-bar">
       <button class="pxb-btn ghost" @click="router.push('/service')">
         Back
       </button>
