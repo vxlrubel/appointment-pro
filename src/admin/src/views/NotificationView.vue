@@ -1,4 +1,5 @@
 <script setup>
+import PxModal from '../components/PxModal.vue'
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
@@ -122,35 +123,38 @@ onMounted(load)
       </div>
       <button class="px-button" :disabled="saving">Save email preferences</button>
     </form>
-    <form v-if="editing" class="px-card px-form" @submit.prevent="save">
-      <h3 class="mt-0">Edit {{ editing.event }}</h3>
-      <div class="px-field">
-        <label for="notification-subject">Subject</label
-        ><input id="notification-subject" v-model="editing.subject" required />
-      </div>
-      <div class="px-field">
-        <label for="notification-body">Full message (HTML supported)</label
-        ><textarea id="notification-body" v-model="editing.body_html" rows="10" required></textarea>
-      </div>
-      <div class="px-field">
-        <label for="notification-enabled">Enabled</label
-        ><select id="notification-enabled" v-model.number="editing.enabled">
-          <option :value="1">Yes</option>
-          <option :value="0">No</option>
-        </select>
-      </div>
-      <div class="px-actions">
-        <button class="px-button" :disabled="saving">Save notification</button
-        ><button
-          class="px-button px-button-ghost"
-          type="button"
-          :disabled="saving"
-          @click="editing = null"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+    <PxModal
+      :open="!!editing"
+      :heading="'Edit notification'"
+      :busy="saving"
+      form-id="notification-form"
+      primary-text="Save notification"
+      @close="editing = null"
+      ><p v-if="error" class="px-error" role="alert">{{ error }}</p>
+      <form v-if="editing" id="notification-form" class="px-card px-form" @submit.prevent="save">
+        <h3 class="mt-0">Edit {{ editing.event }}</h3>
+        <div class="px-field">
+          <label for="notification-subject">Subject</label
+          ><input id="notification-subject" v-model="editing.subject" required />
+        </div>
+        <div class="px-field">
+          <label for="notification-body">Full message (HTML supported)</label
+          ><textarea
+            id="notification-body"
+            v-model="editing.body_html"
+            rows="10"
+            required
+          ></textarea>
+        </div>
+        <div class="px-field">
+          <label for="notification-enabled">Enabled</label
+          ><select id="notification-enabled" v-model.number="editing.enabled">
+            <option :value="1">Yes</option>
+            <option :value="0">No</option>
+          </select>
+        </div>
+      </form>
+    </PxModal>
     <div class="px-card">
       <table class="px-table">
         <thead>
