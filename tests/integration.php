@@ -33,7 +33,7 @@ try {
  $wpdb->prefix = $test_prefix;
  Schema::install();
  Praxleo\Appointment\Domain\Mailer::seed_templates();
- Settings::save(['timezone'=>'UTC','min_lead_hours'=>0,'max_lead_days'=>60,'local_enabled'=>true,'auto_approve'=>true]);
+ Settings::save(['timezone'=>'UTC','currency'=>'USD','min_lead_hours'=>0,'max_lead_days'=>60,'local_enabled'=>true,'auto_approve'=>true]);
  $demo = Demo::insert();
  check(!is_wp_error($demo) && !empty($demo['appointments']), 'Demo seeds all booking tables');
  foreach(['appointments'=>30,'services'=>30,'categories'=>5,'staff'=>5,'locations'=>5,'extras'=>2,'coupons'=>2,'custom_fields'=>3] as $key=>$count)check(($demo[$key]??0)===$count,'Medical demo count: '.$key);
@@ -209,6 +209,17 @@ try {
  $rendered = do_shortcode('[px-appointment location_id="12" service_id="34" staff_id="56"]');
  check(str_contains($rendered,'px-appointment-booking-app') && str_contains($rendered,'data-service-id="34"'), 'Shortcode renders booking presets');
  check(WP_Block_Type_Registry::get_instance()->is_registered('px-appointment/booking'), 'Booking block registered');
+ $service_button=do_shortcode('[px-appointment-service id="'.$service['id'].'" text="Book Annual Health Examination"]');
+ check(str_contains($service_button,'data-px-service-booking="'.$service['id'].'"') && str_contains($service_button,'Book Annual Health Examination') && str_contains($service_button,'aria-haspopup="dialog"'),'Service shortcode renders a labeled modal booking button');
+ $default_button=do_shortcode('[px-appointment-service id="'.$service['id'].'"]');
+ check(str_contains($default_button,esc_html($service['name'])),'Service shortcode defaults the button label to its service name');
+ check(!str_contains(do_shortcode('[px-appointment-service id="'.$service['id'].'" text="<script>alert(1)</script>"]'),'<script>'),'Service button text is HTML escaped');
+ check(do_shortcode('[px-appointment-service id="999999999"]')==='','Missing services do not render booking buttons');
+ R::update('services',['enabled'=>0],['id'=>$service['id']]);
+ check(do_shortcode('[px-appointment-service id="'.$service['id'].'"]')==='','Disabled services do not render booking buttons');
+ R::update('services',['enabled'=>1],['id'=>$service['id']]);
+ check(wp_script_is('px-appointment-public','enqueued') && wp_style_is('px-appointment-public','enqueued'),'Service booking buttons enqueue production public assets');
+
  Settings::save(['stripe_enabled'=>true,'stripe_sandbox'=>false,'stripe_secret'=>'sk_test_mock','stripe_webhook_secret'=>'whsec_mock','paypal_enabled'=>true,'paypal_sandbox'=>false,'paypal_client_id'=>'mock','paypal_secret'=>'mock','paypal_webhook_id'=>'mock']);
  // Provider calls are mocked: no card is charged and no network request is made.
  $mock_id=0;
