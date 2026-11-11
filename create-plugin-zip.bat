@@ -62,7 +62,7 @@ try {
     }
 
     $files = [Collections.Generic.List[string]]::new()
-    foreach ($name in @('appointment-pro.php', 'uninstall.php', 'README.md', 'FEATURE-PARITY.md', 'LICENSE', 'LICENSE.txt', 'COPYING', 'readme.txt')) {
+    foreach ($name in @('appointment-pro.php', 'uninstall.php', 'README.md', 'FEATURE-PARITY.md', 'THIRD-PARTY-NOTICES.md', 'LICENSE', 'LICENSE.txt', 'COPYING', 'readme.txt')) {
         $path = Join-Path $pluginRoot $name
         if (Test-Path -LiteralPath $path -PathType Leaf) { $files.Add($path) }
     }
@@ -83,6 +83,8 @@ try {
         'inc/Installer.php', 'inc/PublicSite/Frontend.php', 'inc/Rest/Rest.php',
         'lib/admin/main.js', 'lib/admin/main.css',
         'lib/admin/chunk-DatabaseView.js', 'lib/admin/chunk-DocumentView.js',
+        'lib/admin/chunk-HolidayView.js', 'lib/admin/HolidayView.css',
+        'inc/Domain/Holidays.php', 'THIRD-PARTY-NOTICES.md',
         'lib/public/public.js', 'lib/public/public.css', 'lib/editor/booking-block.js'
     )
     $relativeFiles = @($files | ForEach-Object { $_.Substring($pluginRoot.Length + 1).Replace('\', '/') })
