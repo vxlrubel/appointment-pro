@@ -17,6 +17,9 @@
     "build:all": "run-s build build:public"
   },
   "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.22",
+    "@fullcalendar/interaction": "^6.1.22",
+    "@fullcalendar/vue3": "^6.1.22",
     "pinia": "^4.0.3",
     "vue": "^3.5.42",
     "vue-router": "^5.3.1"
