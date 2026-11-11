@@ -150,7 +150,24 @@ onBeforeUnmount(() => card?.destroy());
           woocommerce: "Pay with WooCommerce",
         }[method]
       }}
+      <small
+        v-if="
+          ['stripe', 'paypal'].includes(method) &&
+          store.config[method + '_sandbox']
+        "
+        class="pxb-sandbox-badge"
+        >Sandbox</small
+      >
     </button>
+    <p
+      v-if="
+        (store.config.stripe_sandbox && store.config.stripe_enabled) ||
+        (store.config.paypal_sandbox && store.config.paypal_enabled)
+      "
+      class="pxb-muted"
+    >
+      Sandbox payment methods use provider test credentials.
+    </p>
     <div v-if="store.result?.pending === 'stripe'">
       <div ref="cardHost" class="pxb-card"></div>
       <button
