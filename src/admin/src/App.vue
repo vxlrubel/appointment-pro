@@ -33,6 +33,7 @@ watchEffect(() => {
 				<RouterLink to="/payments">Payments</RouterLink>
 				<RouterLink to="/notifications">Notifications</RouterLink>
 				<RouterLink to="/custom-fields">Custom fields</RouterLink>
+				<RouterLink to="/holidays">Holiday</RouterLink>
 				<RouterLink to="/settings">Settings</RouterLink>
 				<RouterLink to="/database">Database</RouterLink>
 				<RouterLink to="/document">Documentation</RouterLink>
