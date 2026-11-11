@@ -1,4 +1,5 @@
 <script setup>
+import PxModal from '../components/PxModal.vue'
 import { onMounted, ref, watch } from 'vue'
 import { api } from '../api'
 import DeleteConfirmation from '../components/DeleteConfirmation.vue'
@@ -231,10 +232,15 @@ onMounted(load)
 
   <p v-if="error" class="px-error">{{ error }}</p>
 
-  <div v-if="showForm" class="px-card">
-    <h3 class="mt-0">New appointment</h3>
-
-    <form class="px-form" @submit.prevent="save">
+  <PxModal
+    :open="!!showForm"
+    :heading="'New appointment'"
+    :busy="saving"
+    form-id="appointment-form"
+    primary-text="Create appointment"
+    @close="showForm = false"
+    ><p v-if="error" class="px-error" role="alert">{{ error }}</p>
+    <form id="appointment-form" class="px-form" @submit.prevent="save">
       <div class="px-form-row">
         <div class="px-field">
           <label>Location</label>
@@ -312,17 +318,8 @@ onMounted(load)
         <label>Notes</label>
         <textarea v-model="form.notes" rows="3"></textarea>
       </div>
-
-      <div class="px-actions">
-        <button class="px-button" type="submit" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Create appointment' }}
-        </button>
-        <button class="px-button px-button-ghost" type="button" @click="showForm = false">
-          Cancel
-        </button>
-      </div>
     </form>
-  </div>
+  </PxModal>
 
   <LoadingSkeleton v-if="loading" :columns="8" label="Loading appointments" />
   <div v-else class="px-card">
