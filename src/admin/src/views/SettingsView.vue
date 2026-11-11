@@ -1,7 +1,9 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, inject } from 'vue'
 import { api } from '../api'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
+import { currencies } from '../../../shared/currency'
+const setCurrency = inject('pxSetCurrency', () => {})
 const loading = ref(true),
   form = ref({}),
   error = ref(''),
@@ -45,6 +47,7 @@ async function save() {
   saved.value = false
   try {
     form.value = await api('settings', { method: 'POST', body: form.value })
+    setCurrency(form.value.currency)
     saved.value = true
   } catch (e) {
     error.value = e.message
@@ -66,13 +69,31 @@ async function save() {
             { key: 'company_name', label: 'Company name' },
             { key: 'company_email', label: 'Company email', type: 'email' },
             { key: 'timezone', label: 'Timezone' },
-            { key: 'currency', label: 'Currency' },
           ]"
           :key="field.key"
           class="px-field"
         >
           <label :for="field.key">{{ field.label }}</label
           ><input :id="field.key" v-model="form[field.key]" :type="field.type || 'text'" />
+        </div>
+        <div class="px-field">
+          <label for="currency">Currency</label
+          ><select id="currency" v-model="form.currency">
+            <option
+              v-if="form.currency && !currencies.some((item) => item.code === form.currency)"
+              :value="form.currency"
+            >
+              {{ form.currency }}
+            </option>
+            <option
+              v-for="item in currencies"
+              :key="item.code"
+              :value="item.code"
+              :data-symbol="item.symbol"
+            >
+              {{ item.code }} ({{ item.symbol }})
+            </option>
+          </select>
         </div>
         <div class="px-field">
           <label for="slot-length">Slot length (min)</label
