@@ -96,18 +96,18 @@ function save() {
       <div class="px-form-row">
         <div class="px-field">
           <label for="shift-day">Day</label
-          ><select id="shift-day" v-model.number="form.weekday">
+          ><PxSelect id="shift-day" v-model.number="form.weekday">
             <option v-for="(day, index) in weekdays" :key="index" :value="index">{{ day }}</option>
-          </select>
+          </PxSelect>
         </div>
         <div class="px-field">
           <label for="shift-location">Location</label
-          ><select id="shift-location" v-model.number="form.location_id">
+          ><PxSelect id="shift-location" v-model.number="form.location_id">
             <option :value="null">All locations</option>
             <option v-for="location in locations" :key="location.id" :value="location.id">
               {{ location.name }}
             </option>
-          </select>
+          </PxSelect>
         </div>
         <div class="px-field">
           <label for="shift-start">Opens</label
