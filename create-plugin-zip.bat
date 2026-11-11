@@ -84,7 +84,9 @@ try {
         'lib/admin/main.js', 'lib/admin/main.css',
         'lib/admin/chunk-DatabaseView.js', 'lib/admin/chunk-DocumentView.js',
         'lib/admin/chunk-HolidayView.js', 'lib/admin/HolidayView.css',
-        'inc/Domain/Holidays.php', 'THIRD-PARTY-NOTICES.md',
+        'inc/Domain/Holidays.php', 'inc/Domain/BusinessHours.php', 'inc/Domain/Affiliates.php',
+        'inc/Domain/Currency.php', 'lib/admin/chunk-BusinessHoursView.js',
+        'lib/admin/chunk-AffiliateView.js', 'lib/admin/AffiliateView.css', 'THIRD-PARTY-NOTICES.md',
         'lib/public/public.js', 'lib/public/public.css', 'lib/editor/booking-block.js'
     )
     $relativeFiles = @($files | ForEach-Object { $_.Substring($pluginRoot.Length + 1).Replace('\', '/') })
