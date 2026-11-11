@@ -134,6 +134,9 @@ class Rest {
 		register_rest_route( self::NS, '/payments', array(
 			'methods' => 'GET', 'callback' => array( $this, 'list_payments' ), 'permission_callback' => $adm,
 		) );
+		register_rest_route( self::NS, '/payments/bulk-delete', array(
+			'methods' => 'POST', 'callback' => array( $this, 'bulk_delete_payments' ), 'permission_callback' => $adm,
+		) );
 		register_rest_route( self::NS, '/config', array(
 			'methods' => 'GET', 'callback' => array( $this, 'public_config' ), 'permission_callback' => $pub,
 		) );
@@ -720,6 +723,28 @@ class Rest {
 	 */
 	public function list_payments() {
 		return rest_ensure_response( Repository::all( 'payments', array(), 'id DESC' ) );
+	}
+
+	/** Delete payment history records without deleting their appointments. */
+	public function bulk_delete_payments( $request ) {
+		global $wpdb;
+		$payload = $this->json_body( $request );
+		$ids = $payload['ids'] ?? null;
+		if ( ! is_array( $ids ) || ! $ids ) {
+			return new WP_Error( 'invalid_ids', 'Select at least one payment record.', array( 'status' => 400 ) );
+		}
+		$validated = array();
+		foreach ( $ids as $id ) {
+			$value = is_bool( $id ) ? false : filter_var( $id, FILTER_VALIDATE_INT, array( 'options' => array( 'min_range' => 1 ) ) );
+			if ( false === $value ) { return new WP_Error( 'invalid_ids', 'Payment IDs must be positive integers.', array( 'status' => 400 ) ); }
+			$validated[] = $value;
+		}
+		$ids = array_values( array_unique( $validated ) );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$table = Schema::table( 'payments' );
+		$deleted = $wpdb->query( $wpdb->prepare( "DELETE FROM $table WHERE id IN ($placeholders)", $ids ) );
+		if ( false === $deleted ) { return new WP_Error( 'delete_failed', 'Could not delete the selected payments.', array( 'status' => 500 ) ); }
+		return rest_ensure_response( array( 'ok' => true, 'deleted' => (int) $deleted ) );
 	}
 
 	/**
