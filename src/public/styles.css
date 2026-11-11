@@ -69,7 +69,7 @@
 }
 .pxb-form input,
 .pxb-form textarea,
-.pxb-form select {
+.pxb-form .px-select-trigger {
   padding: 8px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -115,7 +115,7 @@
   font-size: 13px;
   font-weight: 600;
 }
-.pxb-filters select {
+.pxb-filters .px-select-trigger {
   width: 100%;
   min-height: 40px;
   padding: 8px 10px;
@@ -125,7 +125,7 @@
   color: #1e1e1e;
   font: inherit;
 }
-.pxb-filters select:focus-visible,
+.pxb-filters .px-select-trigger:focus-visible,
 .pxb-choice:focus-visible,
 .pxb-btn:focus-visible,
 .pxb-slot:focus-visible {
@@ -356,4 +356,4 @@
 .pxb-service-modal-content .px-appointment-booking { max-width: none; padding: 0; }
 .pxb-service-modal-content > .pxb-bar { justify-content: flex-end; }
 .pxb-service-location { display: grid; gap: 6px; margin-bottom: 16px; font-size: 14px; }
-.pxb-service-location select { padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; font: inherit; background: white; color: inherit; }
+.pxb-service-location .px-select-trigger { padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; font: inherit; background: white; color: inherit; }
