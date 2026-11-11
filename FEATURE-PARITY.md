@@ -62,3 +62,6 @@ Bookable service cards remain enabled with both filters set to All. Selecting a 
 - Business Hours: default weekly shifts and breaks for staff without personal hours, optional locations, and complete personal-week overrides.
 - Affiliate Programs: unique booking page links, persisted appointment attribution, expandable booking details, enable/disable controls, and deletion that preserves bookings.
 - Shared administration form modals and shared symbol-first currency formatting with two decimals across admin, booking, and email amounts.
+
+- Service shortcode: `[px-appointment-service id="2" text="Book Annual Health Examination"]` opens the selected service at the staff step in a teleported booking modal. Multiple service buttons and the full booking form maintain independent state.
+- Affiliate copying: modern Clipboard API with a temporary selected-text fallback and focus restoration when the API is unavailable or denied.
