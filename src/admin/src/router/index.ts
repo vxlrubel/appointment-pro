@@ -17,8 +17,21 @@ import SettingsView from '../views/SettingsView.vue'
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/database', component: () => import('../views/DatabaseView.vue'), meta: { title: 'Database' } },
-    { path: '/document', component: () => import('../views/DocumentView.vue'), meta: { title: 'Documentation' } },
+    {
+      path: '/holidays',
+      component: () => import('../views/HolidayView.vue'),
+      meta: { title: 'Holiday' },
+    },
+    {
+      path: '/database',
+      component: () => import('../views/DatabaseView.vue'),
+      meta: { title: 'Database' },
+    },
+    {
+      path: '/document',
+      component: () => import('../views/DocumentView.vue'),
+      meta: { title: 'Documentation' },
+    },
     {
       path: '/',
       name: 'Dashboard',
