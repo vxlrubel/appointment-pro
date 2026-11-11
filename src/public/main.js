@@ -1,3 +1,4 @@
+import PxCurrency from '../shared/PxCurrency.vue';
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { createRouter, createWebHashHistory } from "vue-router";
@@ -33,6 +34,7 @@ async function mountBooking() {
   const router = createRouter({ history: createWebHashHistory(), routes });
   const app = createApp(App);
   const pinia = createPinia();
+  app.component("PxCurrency", PxCurrency);
   app.use(pinia);
   const store = useBooking(pinia);
   router.beforeEach((to) => {
