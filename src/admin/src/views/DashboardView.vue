@@ -40,7 +40,7 @@ onMounted(async () => {
       </div>
       <div class="p-3 bg-white border">
         <p class="mt-0">Revenue</p>
-        <div class="fs-4">{{ data.counts.revenue || 0 }}</div>
+        <div class="fs-4"><PxCurrency :amount="data.counts.revenue || 0" /></div>
       </div>
     </div>
 
