@@ -138,9 +138,11 @@ class Appointments {
 			return new WP_Error( 'conflict', __( 'This time is no longer available.', 'appointment-pro' ), array( 'status' => 409 ) );
 		}
 
+		$affiliate = Affiliates::resolve( sanitize_text_field( $payload['affiliate_code'] ?? '' ) );
 		$appointment_id = Repository::insert(
 			'appointments',
 			array(
+				'affiliate_id'    => $affiliate['id'] ?? null,
 				'location_id'     => $location_id,
 				'service_id'      => $service_id,
 				'staff_id'        => $staff_id,
