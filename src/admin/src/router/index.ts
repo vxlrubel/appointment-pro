@@ -17,6 +17,8 @@ import SettingsView from '../views/SettingsView.vue'
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: '/business-hours', component: () => import('../views/BusinessHoursView.vue'), meta: { title: 'Business Hours' } },
+    { path: '/affiliates', component: () => import('../views/AffiliateView.vue'), meta: { title: 'Affiliate Programs' } },
     {
       path: '/holidays',
       component: () => import('../views/HolidayView.vue'),
