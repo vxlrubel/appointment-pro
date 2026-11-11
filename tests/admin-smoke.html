@@ -1,7 +1,7 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/admin/main.css"></head><body><div id="appointment-pro"></div><pre id="test-result">RUNNING</pre><script>
 window.pxAppointmentAdmin={root:'/mock/',nonce:'test'};
-window.confirm=()=>true;
-const result=document.getElementById('test-result');let categories=[{id:1,name:'Test category',position:1}];
+window.confirm=()=>{throw new Error('Native confirmation must not be used')};
+const result=document.getElementById('test-result');let categories=[{id:1,name:'Test category',position:1}];let categoryDeletes=0,paymentDeletes=0,failPaymentDelete=false;let payments=[{id:101,type:'local',status:'completed',amount:50,currency:'USD',created_at:'2026-11-11 09:00:00'},{id:102,type:'stripe',status:'pending',amount:25,currency:'USD',created_at:'2026-11-11 10:00:00'}];
 window.addEventListener('error',e=>{result.dataset.error=e.message});
 window.addEventListener('unhandledrejection',e=>{result.dataset.error=String(e.reason)});
 window.fetch=async function(url,options={}){
@@ -11,10 +11,21 @@ window.fetch=async function(url,options={}){
  if(path==='dashboard')data={counts:{today:0,pending:0,approved:0,revenue:0},upcoming:[]};
  if(path==='settings')data={company_name:'Test Company',timezone:'UTC',currency:'USD',slot_length:15,local_enabled:true};
  if(path==='admin/categories')data=categories;
- if(path==='admin/categories/bulk-delete'){categories=[];data={ok:true};}
+ if(path==='admin/categories/bulk-delete'){categoryDeletes++;categories=[];data={ok:true};}
+ if(path==='payments')data=payments;
+ if(path==='payments/bulk-delete'){
+  paymentDeletes++;await new Promise(resolve=>setTimeout(resolve,120));
+  if(failPaymentDelete){failPaymentDelete=false;return new Response(JSON.stringify({message:'Cannot delete right now'}),{status:500,headers:{'Content-Type':'application/json'}});}
+  const ids=JSON.parse(options.body).ids;const before=payments.length;payments=payments.filter(row=>!ids.includes(row.id));data={ok:true,deleted:before-payments.length};
+ }
  return new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
 };
 async function waitFor(test){for(let n=0;n<100;n++){if(test())return;await new Promise(r=>setTimeout(r,30))}throw new Error('Timed out: '+test)}
+const dialog=()=>document.querySelector('[role="alertdialog"]');
+const dialogButton=text=>Array.from(dialog().querySelectorAll('button')).find(button=>button.textContent.trim()===text);
+const deleteButton=()=>Array.from(document.querySelectorAll('.px-toolbar button')).find(button=>button.textContent.includes('Delete selected'));
+async function openDelete(){deleteButton().focus();deleteButton().click();await waitFor(()=>dialog());await waitFor(()=>document.activeElement===dialogButton('No'));}
+async function waitClosed(){await waitFor(()=>!document.querySelector('.px-delete-overlay'));}
 function nav(text){Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()===text).click()}
 window.addEventListener('load',async()=>{try{
  await waitFor(()=>document.querySelector('.px-page-title')?.textContent==='Dashboard');
@@ -26,8 +37,20 @@ window.addEventListener('load',async()=>{try{
  await waitFor(()=>document.querySelector('tbody input[type="checkbox"]'));
  document.querySelector('tbody input[type="checkbox"]').click();
  await waitFor(()=>!document.querySelector('.px-toolbar button').disabled);
- Array.from(document.querySelectorAll('button')).find(b=>b.textContent.includes('Delete selected')).click();
- await waitFor(()=>!document.querySelector('tbody input[type="checkbox"]'));
+ await openDelete();
+ if(document.querySelector('#appointment-pro [role="alertdialog"]') || document.querySelector('.px-delete-overlay').parentElement!==document.body)throw new Error('Confirmation is not teleported to body');
+ if(!document.getElementById('appointment-pro').inert || document.body.style.overflow!=='hidden')throw new Error('Background is not locked');
+ dialogButton('Yes').focus();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
+ if(document.activeElement!==dialogButton('No'))throw new Error('Confirmation focus trap failed');
+ dialogButton('No').click();await waitClosed();
+ if(categoryDeletes!==0 || !document.querySelector('tbody input').checked || document.getElementById('appointment-pro').inert || document.activeElement!==deleteButton())throw new Error('Cancel changed data or failed to restore focus');
+ await openDelete();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));await waitClosed();
+ if(categoryDeletes!==0)throw new Error('Escape deleted data');
+ await openDelete();document.querySelector('.px-delete-overlay').dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));await waitClosed();
+ if(categoryDeletes!==0)throw new Error('Backdrop cancellation deleted data');
+ await openDelete();dialogButton('Yes').click();
+ await waitFor(()=>!document.querySelector('tbody input[type="checkbox"]'));await waitClosed();
+ if(categoryDeletes!==1)throw new Error('Catalog deletion request count incorrect');
  nav('Staff');await waitFor(()=>document.querySelector('[aria-label="Loading staff"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Add').click();
  await waitFor(()=>document.querySelector('form'));
@@ -46,12 +69,24 @@ window.addEventListener('load',async()=>{try{
  // Leave while the timer is active to exercise cleanup.
 
  nav('Payments');await waitFor(()=>document.querySelector('[aria-label="Loading payments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
+ document.querySelector('tbody input').click();await waitFor(()=>!deleteButton().disabled);
+ if(!document.querySelector('thead input').indeterminate)throw new Error('Payment select-all partial state incorrect');
+ await openDelete();dialogButton('No').click();await waitClosed();
+ if(paymentDeletes!==0 || document.querySelectorAll('tbody input').length!==2)throw new Error('Cancelled payment deletion changed data');
+ document.querySelector('thead input').click();await waitFor(()=>document.querySelector('thead input').checked);
+ failPaymentDelete=true;await openDelete();dialogButton('Yes').click();await waitClosed();
+ await waitFor(()=>document.querySelector('[role="alert"]')?.textContent.includes('Cannot delete right now'));
+ if(document.querySelectorAll('tbody input:checked').length!==2)throw new Error('Payment selection lost on failure');
+ await openDelete();const yes=dialogButton('Yes');yes.click();yes.click();await waitClosed();
+ await waitFor(()=>document.querySelector('tbody')?.textContent.includes('No payments yet'));
+ if(paymentDeletes!==2 || !deleteButton().disabled)throw new Error('Payment deletion duplicated or controls not reset');
+
  nav('Calendar');await waitFor(()=>document.querySelector('[aria-label="Loading calendar"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  nav('Appointments');await waitFor(()=>document.querySelector('[aria-label="Loading appointments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  window.failNextPath='dashboard';nav('Dashboard');await waitFor(()=>document.querySelector('[aria-label="Loading dashboard"]'));
  await waitFor(()=>document.querySelector('.px-error')?.textContent.includes('Temporary connection problem'));
  if(document.querySelector('.px-loading-skeleton'))throw new Error('Loading placeholder remained after request failure');
  if(result.dataset.error)throw new Error(result.dataset.error);
- result.textContent='PASS admin UI: delayed loading skeletons, disabled catalog controls, request error recovery, dashboard, bulk deletion, staff, settings, calendar, payments, appointments, database, documentation';
-}catch(e){result.textContent='FAIL '+(result.dataset.error||e.message)}});
+ result.textContent='PASS admin UI: delayed loading skeletons, disabled catalog controls, request error recovery, dashboard, bulk deletion, staff, settings, calendar, payments, appointments, database, documentation, teleported confirmations, cancellation and payment deletion';
+}catch(e){result.textContent='FAIL '+(result.dataset.error||e.message)+'; overlay='+document.querySelector('.px-delete-overlay')?.className+'; title='+dialog()?.querySelector('h2')?.textContent+'; overflow='+document.body.style.overflow}});
 </script><script type="module" src="../lib/admin/main.js"></script></body></html>
