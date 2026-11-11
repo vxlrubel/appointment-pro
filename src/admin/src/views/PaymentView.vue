@@ -112,7 +112,7 @@ onMounted(load)
           <td>{{ row.id }}</td>
           <td>{{ row.type }}</td>
           <td>{{ row.status }}</td>
-          <td>{{ row.amount }} {{ row.currency }}</td>
+          <td><PxCurrency :amount="row.amount" :currency="row.currency" /></td>
           <td>{{ row.created_at }}</td>
         </tr>
         <tr v-if="!rows.length" class="px-table-row" style="--px-table-row-index: 1">
