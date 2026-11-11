@@ -18,6 +18,7 @@ export const useBooking = defineStore("booking", {
       coupon: false,
       month: false,
     },
+    lockedServiceId: 0,
     locationFilterId: 0,
     categoryFilterId: "",
     slotRequest: 0,
