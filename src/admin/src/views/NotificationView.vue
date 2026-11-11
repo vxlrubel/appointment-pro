@@ -115,10 +115,13 @@ onMounted(load)
         </div>
         <div class="px-field">
           <label for="customer-admin-copy">Also send customer notifications to admin</label
-          ><select id="customer-admin-copy" v-model="preferences.notification_customer_admin_copy">
+          ><PxSelect
+            id="customer-admin-copy"
+            v-model="preferences.notification_customer_admin_copy"
+          >
             <option :value="false">Disabled</option>
             <option :value="true">Enabled</option>
-          </select>
+          </PxSelect>
         </div>
       </div>
       <button class="px-button" :disabled="saving">Save email preferences</button>
@@ -148,10 +151,10 @@ onMounted(load)
         </div>
         <div class="px-field">
           <label for="notification-enabled">Enabled</label
-          ><select id="notification-enabled" v-model.number="editing.enabled">
+          ><PxSelect id="notification-enabled" v-model.number="editing.enabled">
             <option :value="1">Yes</option>
             <option :value="0">No</option>
-          </select>
+          </PxSelect>
         </div>
       </form>
     </PxModal>
