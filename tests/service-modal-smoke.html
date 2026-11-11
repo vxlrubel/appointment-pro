@@ -1,0 +1,58 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/public/public.css"></head><body>
+<div id="page-content"><h1>Our medical services</h1><button type="button" id="service-one" class="pxb-btn" data-px-service-booking="1" aria-haspopup="dialog" aria-expanded="false">Book Annual Health Examination</button><button type="button" id="service-two" class="pxb-btn" data-px-service-booking="2">Book Cardiology Consultation</button><button type="button" id="service-missing" class="pxb-btn" data-px-service-booking="999">Unavailable service</button><div id="inline-form"></div></div>
+<pre id="test-result">RUNNING</pre><script>
+const scenario=new URLSearchParams(location.search).get('scenario')||'standalone';
+if(scenario==='coexist')document.getElementById('inline-form').innerHTML='<div id="px-appointment-booking-app" data-location-id="0" data-service-id="0" data-staff-id="0"></div>';
+history.replaceState(null,'',location.pathname+location.search+'#medical-services');
+let originalUrl=location.href;
+window.pxAppointmentPublic={root:'/mock/',nonce:''};
+const result=document.getElementById('test-result');
+window.addEventListener('error',event=>{result.dataset.error=event.message});window.addEventListener('unhandledrejection',event=>{result.dataset.error=String(event.reason)});
+let failBoot=scenario==='failure',lastPayload=null,bookings=0;
+window.fetch=async(url,options={})=>{
+ const parsed=new URL(url,location.href),path=parsed.pathname.replace('/mock/','');
+ await new Promise(resolve=>setTimeout(resolve,90));
+ if(path==='config'&&failBoot){failBoot=false;return new Response(JSON.stringify({message:'Temporary network failure'}),{status:503,headers:{'Content-Type':'application/json'}})}
+ const serviceId=Number(parsed.searchParams.get('service_id')||1);
+ let data;
+ if(path==='config')data={currency:'USD',local_enabled:true,timezone:'UTC',today:'2026-12-01'};
+ if(path==='locations')data=[{id:1,name:'Central Medical Center'},{id:2,name:'Heart Care Clinic'}];
+ if(path==='services')data={services:[{id:1,name:'Annual Health Examination',category_id:1,price:50,duration_sec:1800,location_ids:[1,2]},{id:2,name:'Cardiology Consultation',category_id:2,price:60,duration_sec:1800,location_ids:[2]}],categories:[{id:1,name:'Primary Care'},{id:2,name:'Cardiology'}]};
+ if(path==='staff')data=[{id:serviceId,full_name:'Doctor '+serviceId,override_price:serviceId===1?45:60}];
+ if(path==='extras'||path==='custom-fields')data=[];
+ if(path==='availability/dates')data={month:'2026-12',dates:{'2026-12-03':1},today:'2026-12-01',min_date:'2026-12-01',max_date:'2026-12-31'};
+ if(path==='availability')data=[{staff_id:serviceId,start:'2026-12-03 09:00:00',display:'09:00'}];
+ if(path==='appointments'){lastPayload=JSON.parse(options.body);bookings++;data={appointment:{id:bookings,status:'approved'},customer_appointment:{token:'0123456789abcdef0123456789abcdef'},amount:45,payments:[{status:'completed',amount:45}]};}
+ if(data===undefined)throw new Error('Unexpected request '+path);
+ return new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
+};
+async function waitFor(test){for(let index=0;index<100;index++){if(test())return;await new Promise(resolve=>setTimeout(resolve,30))}throw new Error('Timed out: '+test)}
+const overlay=()=>Array.from(document.querySelectorAll('.px-modal-overlay')).find(element=>getComputedStyle(element).display!=='none');
+const heading=text=>overlay()?.querySelector('h3')?.textContent===text;
+function click(text){const button=Array.from(overlay().querySelectorAll('button')).find(element=>element.textContent.trim()===text);if(!button||button.disabled)throw new Error('Missing or disabled modal button '+text);button.click()}
+function field(placeholder,value){const input=overlay().querySelector('input[placeholder="'+placeholder+'"]');input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))}
+async function close(){overlay().querySelector('[aria-label="Close modal"]').click();await waitFor(()=>!overlay());if(document.getElementById('page-content').inert||document.body.style.overflow==='hidden')throw new Error('Modal close failed to restore page');}
+window.addEventListener('load',async()=>{try{
+ if(scenario==='coexist'){await waitFor(()=>document.querySelector('#px-appointment-booking-app h3')?.textContent==='Choose a service');originalUrl=location.href;}
+ const first=document.getElementById('service-one');first.focus();first.click();await waitFor(()=>overlay());
+ if(overlay().parentElement!==document.body || !document.getElementById('page-content').inert)throw new Error('Modal is not teleported or background not locked');
+ if(scenario==='failure'){await waitFor(()=>overlay().querySelector('[role="alert"]')?.textContent.includes('Temporary network failure'));click('Try again');}
+ await waitFor(()=>heading('Choose staff'));
+ if(!overlay().querySelector('h2').textContent.includes('Annual Health Examination') || overlay().querySelector('button.pxb-choice')?.textContent.trim()!=='Any staff')throw new Error('Selected service did not open at staff step');
+ if(Array.from(overlay().querySelectorAll('button')).some(button=>button.textContent.trim()==='Back'))throw new Error('Service modal allows returning to service catalog');
+ const locationSelect=overlay().querySelector('.pxb-service-location select');if(!locationSelect)throw new Error('Related service locations not available');locationSelect.value='2';locationSelect.dispatchEvent(new Event('change',{bubbles:true}));await waitFor(()=>overlay().querySelector('[aria-label="Loading booking options"]'));await waitFor(()=>heading('Choose staff') && overlay().textContent.includes('Doctor 1'));
+ click('Doctor 1');await waitFor(()=>heading('Date and time'));await waitFor(()=>overlay().querySelector('.pxb-slot'));
+ await close();if(document.activeElement!==first)throw new Error('Modal did not restore trigger focus');first.click();await waitFor(()=>heading('Date and time'));
+ click('09:00');await waitFor(()=>heading('Your details'));field('Full name','Modal Patient');field('Email','patient@example.test');overlay().querySelector('form').requestSubmit();await waitFor(()=>heading('Payment'));
+ click('Pay at location');await waitFor(()=>heading('Booking received'));
+ if(lastPayload.service_id!==1 || lastPayload.location_id!==2 || lastPayload.staff_id!==1 || bookings!==1)throw new Error('Modal checkout changed selected service or location');
+ if(location.href!==originalUrl)throw new Error('Modal changed page history');
+ if(scenario==='coexist' && document.querySelector('#px-appointment-booking-app h3')?.textContent!=='Choose a service')throw new Error('Modal changed inline booking state');
+ await close();first.click();await waitFor(()=>heading('Choose staff'));if(bookings!==1 || overlay().querySelector('input[placeholder="Full name"]'))throw new Error('Completed booking did not restart cleanly');await close();
+ document.getElementById('service-two').focus();document.getElementById('service-two').click();await waitFor(()=>heading('Choose staff'));if(!overlay().querySelector('h2').textContent.includes('Cardiology Consultation') || !overlay().textContent.includes('Doctor 2'))throw new Error('Second service button reused the wrong service');
+ document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await waitFor(()=>!overlay());
+ document.getElementById('service-missing').click();await waitFor(()=>overlay()?.querySelector('[role="alert"]')?.textContent.includes('no longer available'));await close();
+ if(result.dataset.error)throw new Error(result.dataset.error);
+ result.textContent='PASS service modal ('+scenario+'): staff-first service booking, related locations, full checkout, close/reopen, independent buttons and inline form, fixed service, retry and unavailable-service handling';
+}catch(error){result.textContent='FAIL '+(result.dataset.error||error.message)}});
+</script><script src="../lib/public/public.js" defer></script></body></html>
