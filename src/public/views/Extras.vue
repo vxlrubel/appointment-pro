@@ -30,7 +30,7 @@ async function next() {
   <div class="pxb-card">
     <h3>Extras</h3>
     <label v-for="ex in store.extras" :key="ex.id" class="pxb-choice">
-      {{ ex.title }} — {{ store.config.currency }} {{ ex.price }}
+      {{ ex.title }} — <PxCurrency :amount="ex.price" />
       <input
         :disabled="store.pending.slots"
         type="number"
