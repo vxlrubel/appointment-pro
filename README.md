@@ -234,7 +234,21 @@ Supply optional IDs to initialize location, service, or staff choices:
 
 Presets initialize the selection; they do not replace catalog/staff configuration or bypass availability checks. The service-first page remains the starting point. Use the **Appointment Pro** block's preset controls for the equivalent block-based setup.
 
-Use one booking embed per page: the current frontend mounts to a single booking form element.
+Use one full booking form embed per page. You can add multiple service booking buttons on the same page, including alongside the full form.
+
+### Service booking button and modal
+
+Use this shortcode for a button that books a specific service:
+
+```text
+[px-appointment-service id="2" text="Book Annual Health Examination"]
+```
+
+`id` is the service ID from the Services screen. `text` is the exact button label; when omitted, the service name is used. Missing or disabled services do not render a button.
+
+Clicking opens a modal with the service already selected and **Staff** active as step 2. Compatible locations can be changed on that step when the service has multiple locations. The service stays fixed; staff, calendar availability, holidays, extras, customer details, custom fields, coupons, and payments use the normal booking flow.
+
+Each button keeps separate booking state. Closing and reopening an unfinished modal resumes its progress, including a pending payment form. Reopening after confirmation starts a new booking. Modal steps do not change the page URL or the full booking form's state. Affiliate referral parameters on the page continue to be submitted with the booking.
 
 ### Customer flow
 
@@ -278,7 +292,7 @@ Staff with no saved personal weekly hours inherit Business Hours. Once a staff m
 
 ### Affiliate Programs
 
-Open **Affiliate Programs**, choose **Add affiliate**, and enter the partner name and the URL of a published booking page on this site. Each link receives a unique `px_aff` query parameter; existing URL parameters and booking page fragments are retained. Share or copy that generated link.
+Open **Affiliate Programs**, choose **Add affiliate**, and enter the partner name and the URL of a published booking page on this site. Each link receives a unique `px_aff` query parameter; existing URL parameters and booking page fragments are retained. Share or copy that generated link. Copy uses the browser Clipboard API with a selection-based fallback for local HTTP pages or blocked API access.
 
 Bookings made in that link's booking flow store the referral code on the appointment. Counts include all attributed appointments, including pending and cancelled bookings. Click an affiliate name to expand customer, service, staff, date, status, and amount details. Disabling a link stops new attribution. Deleting a link clears its attribution while preserving the appointments and payments. Tracking uses the current booking page URL and does not add tracking cookies or a commission/payment system.
 
@@ -290,7 +304,7 @@ Select the currency under **Settings > Company Settings**. `PxCurrency` displays
 
 Administrative create/edit forms use **PxModal**, teleported to the document body. It supplies a close control, Cancel, a configurable primary action, native form validation, focus trapping/restoration, background locking, and nested dialogs. Settings and recipient preferences remain persistent configuration forms.
 
-For development, import `src/admin/src/components/PxModal.vue` with `open`, `heading`, `primaryText`, `busy`, and `formId` props. Put the form in its default slot, give it the matching ID, and handle `close`. The primary footer button submits that form. `submit` can instead handle an action without `formId`; `hideFooter` allows a custom footer flow. Shared `src/shared/PxCurrency.vue` accepts `amount` and optional `currency` props, using the provided configured currency when omitted.
+For development, import `src/admin/src/components/PxModal.vue` with `open`, `heading`, `primaryText`, `busy`, and `formId` props. Put the form in its default slot, give it the matching ID, and handle `close`. The primary footer button submits that form. `submit` can instead handle an action without `formId`; `hideFooter` allows a custom footer flow. `keepMounted` preserves a hidden modal?s contents, including in-progress payment forms. Shared `src/shared/PxCurrency.vue` accepts `amount` and optional `currency` props, using the provided configured currency when omitted.
 
 ### Clinic holidays
 
