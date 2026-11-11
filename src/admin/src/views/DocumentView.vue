@@ -149,7 +149,7 @@ onBeforeUnmount(() => {
         related options in the other. Selecting a service automatically selects its category and
         keeps the chosen location, or uses its first configured location when All locations is
         selected. There is no separate location step. The date-and-time step includes a visible
-        calendar; dates without available slots are disabled.
+        calendar; dates without available slots, including clinic holidays, are disabled.
       </p>
       <h3>4. Payments</h3>
       <p>Open <strong>Settings</strong> and enable the methods you need:</p>
@@ -169,25 +169,42 @@ onBeforeUnmount(() => {
         For PayPal, configure <code>/wp-json/px-appointment/v1/webhooks/paypal</code> and save its
         webhook ID. Test using sandbox credentials before switching to live payments.
       </p>
-      <h3>5. Appointments</h3>
+      <p>
+        Stripe and PayPal each have a sandbox toggle inside their enabled section. Sandbox and live
+        credentials, including webhook secrets or IDs, are saved separately. Switching the toggle
+        shows that environment's fields; save Settings to activate it. Checkout uses the active
+        credentials and shows a Sandbox badge in test mode.
+      </p>
+      <h3>5. Appointments, holidays, and notifications</h3>
       <p>
         Use <strong>Appointments</strong> to add bookings, approve, cancel, or mark done. Use
         <strong>Calendar</strong> for a week view. Email templates live under
-        <strong>Notifications</strong> (edit only; they are not deleted).
+        <strong>Notifications</strong> in Admin, Staff, and Customer tabs. All audiences support
+        creation, approval, cancellation, and reminder events. Table previews show 30 plain-text
+        characters; editing shows the full HTML body. The Customer tab also offers an additional
+        custom email and an optional copy to the company/admin email.
       </p>
 
+      <p>
+        Open <strong>Holiday</strong> above Settings for the month calendar. Select a date, then
+        enter a name, description, and date. Yearly recurrence and booking closure are enabled by
+        default. You can edit or delete holidays using the calendar or table. Closed dates apply
+        across locations in the company timezone; existing appointments remain unchanged.
+      </p>
       <h3>6. Demo data</h3>
       <p>
-        Open <strong>Database</strong> to reset booking tables or insert sample locations, services,
-        staff, and appointments. Reset does not remove notification templates.
+        Open <strong>Database</strong> to reset booking tables or insert medical demo content: 30
+        appointments, 30 services, 5 categories, 5 staff, 5 locations, 2 extras, 2 coupons, and 3
+        custom fields. Demo insertion replaces booking content, including holidays. Export a backup
+        first. Reset does not remove notification templates.
       </p>
 
       <h3>7. Move data between sites</h3>
       <p>
         On <strong>Database</strong>, use <strong>Export CSV</strong> on the source site, then
         <strong>Import CSV</strong> on the destination. The file includes locations, services,
-        staff, schedules, customers, appointments, extras, coupons, custom fields, and notification
-        templates.
+        staff, schedules, customers, appointments, extras, coupons, custom fields, holidays, and
+        notification templates.
       </p>
     </div>
   </div>
