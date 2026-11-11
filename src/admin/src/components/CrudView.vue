@@ -1,6 +1,11 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
+import DeleteConfirmation from './DeleteConfirmation.vue'
+import { useDeleteConfirmation } from '../composables/useDeleteConfirmation'
+
+const { confirmation, confirmDelete, resolveDelete } = useDeleteConfirmation()
+const deleting = ref(false)
 import LoadingSkeleton from './LoadingSkeleton.vue'
 
 const loading = ref(true)
@@ -14,16 +19,25 @@ const props = defineProps({
 
 const selected = ref([])
 async function bulkDelete() {
-  if (!selected.value.length || !window.confirm('Delete selected records?')) return
+  if (loading.value || deleting.value || !selected.value.length) return
+  const ids = [...selected.value]
+  if (
+    !(await confirmDelete({
+      heading: 'Delete selected records?',
+      bodyText: `Permanently delete ${ids.length} selected records? This cannot be undone.`,
+    }))
+  )
+    return
+  deleting.value = true
+  error.value = ''
   try {
-    await api('admin/' + props.path + '/bulk-delete', {
-      method: 'POST',
-      body: { ids: selected.value },
-    })
+    await api('admin/' + props.path + '/bulk-delete', { method: 'POST', body: { ids } })
     selected.value = []
     await load()
   } catch (e) {
     error.value = e.message
+  } finally {
+    deleting.value = false
   }
 }
 const rows = ref([])
@@ -115,15 +129,25 @@ async function save() {
 }
 
 async function remove(id) {
-  if (!window.confirm('Delete this record?')) {
+  if (
+    deleting.value ||
+    !(await confirmDelete({
+      heading: 'Delete record?',
+      bodyText: 'Permanently delete this record? This cannot be undone.',
+    }))
+  )
     return
-  }
+  deleting.value = true
+  error.value = ''
 
   try {
     await api('admin/' + props.path + '/' + id, { method: 'DELETE' })
+    selected.value = selected.value.filter((selectedId) => selectedId !== id)
     await load()
   } catch (e) {
     error.value = e.message
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -138,11 +162,16 @@ onMounted(async () => {
 </script>
 
 <template>
+  <DeleteConfirmation
+    v-bind="confirmation"
+    @confirm="resolveDelete(true)"
+    @cancel="resolveDelete(false)"
+  />
   <div class="px-toolbar">
     <button
       v-if="allowDelete"
       class="px-button px-button-danger"
-      :disabled="loading || !selected.length"
+      :disabled="loading || deleting || !selected.length"
       @click="bulkDelete"
     >
       Delete selected
@@ -202,6 +231,7 @@ onMounted(async () => {
             <input
               type="checkbox"
               aria-label="Select all"
+              :disabled="deleting"
               @change="selected = $event.target.checked ? rows.map((r) => r.id) : []"
             />
           </th>
@@ -210,9 +240,20 @@ onMounted(async () => {
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, index) in rows" :key="row.id" class="px-table-row" :style="{ '--px-table-row-index': index + 1 }">
+        <tr
+          v-for="(row, index) in rows"
+          :key="row.id"
+          class="px-table-row"
+          :style="{ '--px-table-row-index': index + 1 }"
+        >
           <td v-if="allowDelete">
-            <input v-model="selected" type="checkbox" :value="row.id" aria-label="Select record" />
+            <input
+              v-model="selected"
+              type="checkbox"
+              :value="row.id"
+              aria-label="Select record"
+              :disabled="deleting"
+            />
           </td>
           <td v-for="field in fields" :key="field.key">
             <template v-if="field.type === 'select'">
@@ -225,6 +266,7 @@ onMounted(async () => {
             <button
               v-if="allowDelete"
               class="px-button-outline cancel"
+              :disabled="deleting"
               type="button"
               @click="remove(row.id)"
             >
@@ -233,7 +275,9 @@ onMounted(async () => {
           </td>
         </tr>
         <tr v-if="!rows.length" class="px-table-row" style="--px-table-row-index: 1">
-          <td :colspan="fields.length + 1" class="px-muted">No records yet.</td>
+          <td :colspan="fields.length + 1 + (allowDelete ? 1 : 0)" class="px-muted">
+            No records yet.
+          </td>
         </tr>
       </tbody>
     </table>
