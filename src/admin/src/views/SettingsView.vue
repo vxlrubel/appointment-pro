@@ -78,7 +78,7 @@ async function save() {
         </div>
         <div class="px-field">
           <label for="currency">Currency</label
-          ><select id="currency" v-model="form.currency">
+          ><PxSelect id="currency" v-model="form.currency">
             <option
               v-if="form.currency && !currencies.some((item) => item.code === form.currency)"
               :value="form.currency"
@@ -93,7 +93,7 @@ async function save() {
             >
               {{ item.code }} ({{ item.symbol }})
             </option>
-          </select>
+          </PxSelect>
         </div>
         <div class="px-field">
           <label for="slot-length">Slot length (min)</label
@@ -101,10 +101,10 @@ async function save() {
         </div>
         <div class="px-field">
           <label for="auto-approve">Auto-approve</label
-          ><select id="auto-approve" v-model="form.auto_approve">
+          ><PxSelect id="auto-approve" v-model="form.auto_approve">
             <option :value="true">Yes</option>
             <option :value="false">No</option>
-          </select>
+          </PxSelect>
         </div>
       </div>
     </fieldset>
@@ -126,10 +126,10 @@ async function save() {
         </div>
         <div class="px-field">
           <label for="uninstall-data">Delete data on uninstall</label
-          ><select id="uninstall-data" v-model="form.delete_data_on_uninstall">
+          ><PxSelect id="uninstall-data" v-model="form.delete_data_on_uninstall">
             <option :value="false">Keep data</option>
             <option :value="true">Delete data</option>
-          </select>
+          </PxSelect>
         </div>
       </div>
     </fieldset>
@@ -145,10 +145,10 @@ async function save() {
           class="px-field"
         >
           <label :for="gateway.key + '-enabled'">{{ gateway.name }}</label
-          ><select :id="gateway.key + '-enabled'" v-model="form[gateway.key + '_enabled']">
+          ><PxSelect :id="gateway.key + '-enabled'" v-model="form[gateway.key + '_enabled']">
             <option :value="true">On</option>
             <option :value="false">Off</option>
-          </select>
+          </PxSelect>
         </div>
       </div>
       <div class="px-gateway-grid">
@@ -161,18 +161,18 @@ async function save() {
           <h3>{{ gateway.name }}</h3>
           <div class="px-field">
             <label :for="gateway.key + '-enabled'">{{ gateway.name }} enabled</label
-            ><select :id="gateway.key + '-enabled'" v-model="form[gateway.key + '_enabled']">
+            ><PxSelect :id="gateway.key + '-enabled'" v-model="form[gateway.key + '_enabled']">
               <option :value="true">On</option>
               <option :value="false">Off</option>
-            </select>
+            </PxSelect>
           </div>
           <template v-if="form[gateway.key + '_enabled']"
             ><div class="px-field">
               <label :for="gateway.key + '-sandbox'">{{ gateway.name }} sandbox</label
-              ><select :id="gateway.key + '-sandbox'" v-model="form[gateway.key + '_sandbox']">
+              ><PxSelect :id="gateway.key + '-sandbox'" v-model="form[gateway.key + '_sandbox']">
                 <option :value="true">On — Sandbox</option>
                 <option :value="false">Off — Live</option>
-              </select>
+              </PxSelect>
             </div>
             <p class="px-muted">
               {{
