@@ -306,6 +306,7 @@ export const useBooking = defineStore("booking", {
           headers: { "Idempotency-Key": this.key },
           body: {
             idempotency_key: this.key,
+            affiliate_code: new URLSearchParams(window.location.search).get("px_aff") || "",
             location_id: this.location.id,
             service_id: this.service.id,
             staff_id: this.staffMember.id,
