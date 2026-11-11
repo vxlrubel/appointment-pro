@@ -1,4 +1,6 @@
 <script setup>
+import WeeklyHoursEditor from '../components/WeeklyHoursEditor.vue'
+import PxModal from '../components/PxModal.vue'
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import DeleteConfirmation from '../components/DeleteConfirmation.vue'
@@ -37,13 +39,21 @@ const rows = ref([])
 const form = ref({})
 const editing = ref(null)
 const daysOff = ref([])
+const showLeave = ref(false)
+const loadingExtras = ref(false)
 const leave = ref({ start_datetime: '', end_datetime: '', all_day: 1, reason: '' })
 async function addDayOff() {
+  if (saving.value) return
+  saving.value = true
+  error.value = ''
   try {
     await api('staff/' + editing.value + '/days-off', { method: 'POST', body: leave.value })
     daysOff.value = await api('staff/' + editing.value + '/days-off')
+    showLeave.value = false
   } catch (e) {
     error.value = e.message
+  } finally {
+    saving.value = false
   }
 }
 async function removeDayOff(id) {
@@ -68,8 +78,6 @@ const allServices = ref([])
 const error = ref('')
 const saving = ref(false)
 
-const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 async function load() {
   loading.value = true
   try {
@@ -86,6 +94,9 @@ async function load() {
 function start() {
   form.value = { full_name: '', email: '', phone: '', enabled: 1 }
   editing.value = 'new'
+  loadingExtras.value = false
+  daysOff.value = []
+  showLeave.value = false
   schedule.value = []
   services.value = []
   error.value = ''
@@ -99,12 +110,25 @@ function edit(row) {
 }
 
 async function loadExtras(id) {
+  loadingExtras.value = true
+  daysOff.value = []
+  schedule.value = []
+  services.value = []
   try {
-    daysOff.value = await api('staff/' + id + '/days-off')
-    schedule.value = await api('staff/' + id + '/schedule')
-    services.value = await api('staff/' + id + '/services')
+    const [off, hours, links] = await Promise.all([
+      api('staff/' + id + '/days-off'),
+      api('staff/' + id + '/schedule'),
+      api('staff/' + id + '/services'),
+    ])
+    if (editing.value === id) {
+      daysOff.value = off
+      schedule.value = hours
+      services.value = links
+    }
   } catch (e) {
-    error.value = e.message
+    if (editing.value === id) error.value = e.message
+  } finally {
+    if (editing.value === id) loadingExtras.value = false
   }
 }
 
@@ -131,6 +155,9 @@ async function save() {
 }
 
 async function saveSchedule() {
+  if (saving.value || loadingExtras.value) return
+  saving.value = true
+  error.value = ''
   try {
     schedule.value = await api('staff/' + editing.value + '/schedule', {
       method: 'POST',
@@ -138,23 +165,15 @@ async function saveSchedule() {
     })
   } catch (e) {
     error.value = e.message
+  } finally {
+    saving.value = false
   }
 }
 
-function addShift() {
-  schedule.value.push({
-    weekday: 1,
-    start_time: '09:00:00',
-    end_time: '17:00:00',
-    location_id: null,
-  })
-}
-
-function removeShift(index) {
-  schedule.value.splice(index, 1)
-}
-
 async function saveServices() {
+  if (saving.value || loadingExtras.value) return
+  saving.value = true
+  error.value = ''
   try {
     services.value = await api('staff/' + editing.value + '/services', {
       method: 'POST',
@@ -162,6 +181,8 @@ async function saveServices() {
     })
   } catch (e) {
     error.value = e.message
+  } finally {
+    saving.value = false
   }
 }
 
@@ -199,8 +220,16 @@ onMounted(load)
 
   <p v-if="error" class="px-error">{{ error }}</p>
 
-  <div v-if="editing" class="px-card">
-    <form class="px-form" @submit.prevent="save">
+  <PxModal
+    :open="!!editing"
+    :heading="editing === 'new' ? 'Create staff' : 'Edit staff'"
+    :busy="saving"
+    form-id="staff-form"
+    primary-text="Save staff"
+    @close="editing = null"
+  >
+    <p v-if="error" class="px-error" role="alert">{{ error }}</p>
+    <form id="staff-form" class="px-form" @submit.prevent="save">
       <div class="px-form-row">
         <div class="px-field">
           <label>Name</label>
@@ -222,58 +251,25 @@ onMounted(load)
           </select>
         </div>
       </div>
-
-      <div class="px-actions">
-        <button class="px-button" type="submit" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save staff' }}
-        </button>
-        <button class="px-button px-button-ghost" type="button" @click="editing = null">
-          Close
-        </button>
-      </div>
     </form>
 
-    <div v-if="editing !== 'new'">
+    <LoadingSkeleton
+      v-if="editing !== 'new' && loadingExtras"
+      variant="form"
+      label="Loading staff schedule"
+    />
+    <div v-else-if="editing !== 'new'">
       <h3>Weekly hours</h3>
+      <p class="px-muted">
+        When no weekly hours are saved, Business Hours apply. A staff schedule overrides the entire
+        business week.
+      </p>
 
-      <div v-for="(shift, index) in schedule" :key="'shift-' + index" class="px-row">
-        <select v-model.number="shift.weekday">
-          <option v-for="day in weekdays" :key="day" :value="weekdays.indexOf(day)">
-            {{ day }}
-          </option>
-        </select>
-        <input v-model="shift.start_time" type="time" />
-        <input v-model="shift.end_time" type="time" />
-        <div>
-          <div v-for="(pause, bi) in shift.breaks || []" :key="bi" class="px-row">
-            <label>Break</label><input v-model="pause.start_time" type="time" /><input
-              v-model="pause.end_time"
-              type="time"
-            /><button class="px-button px-button-danger" @click="shift.breaks.splice(bi, 1)">
-              Remove break
-            </button>
-          </div>
-          <button
-            class="px-button px-button-ghost"
-            @click="(shift.breaks ||= []).push({ start_time: '12:00', end_time: '13:00' })"
-          >
-            Add break
-          </button>
-        </div>
-        <select v-model.number="shift.location_id">
-          <option :value="null">All locations</option>
-          <option v-for="location in locations" :key="location.id" :value="location.id">
-            {{ location.name }}
-          </option>
-        </select>
-        <button class="px-button px-button-danger" type="button" @click="removeShift(index)">
-          Remove
-        </button>
-      </div>
-
+      <WeeklyHoursEditor v-model="schedule" :locations="locations" :disabled="saving" />
       <div class="px-actions">
-        <button class="px-button px-button-ghost" type="button" @click="addShift">Add shift</button>
-        <button class="px-button" type="button" @click="saveSchedule">Save hours</button>
+        <button class="px-button" type="button" :disabled="saving" @click="saveSchedule">
+          Save hours
+        </button>
       </div>
 
       <h3>Days off (UTC)</h3>
@@ -281,24 +277,36 @@ onMounted(load)
         <span>{{ day.start_datetime }} to {{ day.end_datetime }} {{ day.reason }}</span
         ><button class="px-button px-button-danger" @click="removeDayOff(day.id)">Remove</button>
       </div>
-      <form class="px-form" @submit.prevent="addDayOff">
-        <div class="px-form-row">
-          <div class="px-field">
-            <label>From</label
-            ><input v-model="leave.start_datetime" type="datetime-local" required />
+      <button class="px-button px-button-ghost" type="button" @click="showLeave = true">
+        Add time off
+      </button>
+      <PxModal
+        :open="showLeave"
+        heading="Staff time off"
+        :busy="saving"
+        form-id="time-off-form"
+        primary-text="Add time off"
+        @close="showLeave = false"
+      >
+        <form id="time-off-form" class="px-form" @submit.prevent="addDayOff">
+          <p v-if="error" class="px-error" role="alert">{{ error }}</p>
+          <div class="px-form-row">
+            <div class="px-field">
+              <label>From</label
+              ><input v-model="leave.start_datetime" type="datetime-local" required />
+            </div>
+            <div class="px-field">
+              <label>Until</label
+              ><input v-model="leave.end_datetime" type="datetime-local" required />
+            </div>
+            <div class="px-field"><label>Reason</label><input v-model="leave.reason" /></div>
+            <label
+              ><input v-model="leave.all_day" type="checkbox" :true-value="1" :false-value="0" />
+              All day</label
+            >
           </div>
-          <div class="px-field">
-            <label>Until</label
-            ><input v-model="leave.end_datetime" type="datetime-local" required />
-          </div>
-          <div class="px-field"><label>Reason</label><input v-model="leave.reason" /></div>
-          <label
-            ><input v-model="leave.all_day" type="checkbox" :true-value="1" :false-value="0" /> All
-            day</label
-          >
-        </div>
-        <button class="px-button">Add time off</button>
-      </form>
+        </form>
+      </PxModal>
       <h3>Services at locations</h3>
 
       <div v-for="(link, index) in services" :key="'svc-' + index" class="px-row">
@@ -332,10 +340,12 @@ onMounted(load)
         <button class="px-button px-button-ghost" type="button" @click="addServiceLink">
           Add service
         </button>
-        <button class="px-button" type="button" @click="saveServices">Save services</button>
+        <button class="px-button" type="button" :disabled="saving" @click="saveServices">
+          Save services
+        </button>
       </div>
     </div>
-  </div>
+  </PxModal>
 
   <LoadingSkeleton v-if="loading" :columns="6" label="Loading staff" />
   <div v-else class="px-card">
