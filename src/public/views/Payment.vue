@@ -121,7 +121,7 @@ onBeforeUnmount(() => card?.destroy());
 <template>
   <div class="pxb-card">
     <h3>Payment</h3>
-    <p>Total: {{ store.config.currency }} {{ store.subtotal.toFixed(2) }}</p>
+    <p>Total: <PxCurrency :amount="store.subtotal" /></p>
     <BookingSkeleton
       v-if="store.loading || confirming || providerLoading"
       variant="form"
