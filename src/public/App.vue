@@ -27,11 +27,12 @@
 </template>
 <script setup>
 import BookingSkeleton from "./components/BookingSkeleton.vue";
-import { computed } from "vue";
+import { computed, provide } from "vue";
 import { useRoute } from "vue-router";
 import { useBooking } from "./store";
 const route = useRoute();
 const store = useBooking();
+provide("pxCurrency", computed(() => store.config.currency || "USD"));
 const step = computed(() => route.name || "service");
 const visibleSteps = computed(() => {
   const s = [
