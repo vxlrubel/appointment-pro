@@ -21,6 +21,13 @@ function sync() {
 function keydown(event: KeyboardEvent) {
   const top = stack.at(-1)
   if (!top) return
+  // An expanded select handles Escape before its containing modal closes.
+  if (
+    event.key === 'Escape' &&
+    event.target instanceof Element &&
+    event.target.closest('[role="combobox"][aria-expanded="true"]')
+  )
+    return
   if (event.key === 'Escape') {
     event.preventDefault()
     event.stopImmediatePropagation()
@@ -30,7 +37,7 @@ function keydown(event: KeyboardEvent) {
   if (event.key !== 'Tab') return
   const fields = Array.from(
     top.dialog.querySelectorAll<HTMLElement>(
-      'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]',
+      'button:not(:disabled), input:not(:disabled), select:not(:disabled):not([tabindex="-1"]), textarea:not(:disabled), a[href], [tabindex="0"]',
     ),
   ).filter((el) => el.getClientRects().length)
   const first = fields[0],
