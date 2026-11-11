@@ -152,7 +152,7 @@ Run all npm commands below from `src/admin`:
 | `npm run lint` | Run configured linters; these scripts apply fixes |
 | `npm run format` | Format the admin `src/` directory |
 
-The combined build runs sequentially and stops if either build fails:
+Type-checking, admin compilation, and public compilation run sequentially to reduce peak memory use. The combined build stops if any step fails:
 
 ```powershell
 npm run build:all
@@ -299,6 +299,21 @@ Bookings made in that link's booking flow store the referral code on the appoint
 ### Currency display
 
 Select the currency under **Settings > Company Settings**. `PxCurrency` displays its symbol before every monetary amount with exactly two decimal places in both applications, including dashboard revenue, catalog prices, extras, checkout, payment history, and affiliate details. Payment rows retain their recorded currency; email price placeholders use the same symbol convention. Percentage coupons remain percentages.
+
+### Reusable select controls
+
+Admin and public booking selectors use the shared **PxSelect** component at `src/shared/PxSelect.vue`. It shows the up/down arrow icon, caps dropdown height at 300px with vertical scrolling, and opens above when there is insufficient space below and more space above. The popup follows viewport, scrolling, and control-size changes, including within modals.
+
+Use `PxSelect` in place of `select`, keeping existing option slots and `v-model` bindings:
+
+```vue
+<PxSelect v-model="currency" aria-label="Currency">
+  <option value="USD">USD ($)</option>
+  <option value="BDT">BDT (৳)</option>
+</PxSelect>
+```
+
+Both applications register the component globally. It supports `v-model.number`, controlled `value`/`change`, typed boolean/number/null values, disabled controls/options, placeholders, required validation, labels, and native form submission. Use arrow keys, Home/End, Page Up/Down, or type an option name; Enter/Space selects, Tab commits and moves onward, and Escape dismisses without committing the highlighted option. Within a modal, the first Escape closes its open dropdown.
 
 ### Reusable form modals
 
