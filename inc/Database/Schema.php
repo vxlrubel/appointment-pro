@@ -17,7 +17,7 @@ class Schema {
 	/**
 	 * Current database version.
 	 */
-	public const DB_VERSION = '1.1.0';
+	public const DB_VERSION = '1.2.0';
 
 	/**
 	 * Return a prefixed table name.
@@ -248,6 +248,17 @@ class Schema {
 			body_html longtext NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY event (event)
+		) $charset;";
+
+		$sql[] = "CREATE TABLE {$p}holidays (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			name varchar(191) NOT NULL,
+			description text NOT NULL,
+			holiday_date date NOT NULL,
+			repeats_yearly tinyint(1) NOT NULL DEFAULT 1,
+			enabled tinyint(1) NOT NULL DEFAULT 1,
+			PRIMARY KEY  (id),
+			KEY holiday_date (holiday_date)
 		) $charset;";
 
 		foreach ( $sql as $statement ) {
