@@ -1,4 +1,5 @@
 <script setup>
+import PxModal from '../components/PxModal.vue'
 import { computed, onMounted, ref } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
@@ -143,49 +144,51 @@ onMounted(load)
   <p v-if="message" class="px-success" role="status">{{ message }}</p>
   <LoadingSkeleton v-if="loading" variant="calendar" label="Loading holidays" />
   <template v-else>
-    <form v-if="form" class="px-card px-form" @submit.prevent="save">
-      <h3 class="mt-0">{{ form.id ? 'Edit holiday' : 'New holiday' }}</h3>
-      <div class="px-form-row">
-        <div class="px-field">
-          <label for="holiday-name">Name</label
-          ><input id="holiday-name" v-model="form.name" required maxlength="191" />
+    <PxModal
+      :open="!!form"
+      :heading="form?.id ? 'Edit holiday' : 'New holiday'"
+      :busy="saving"
+      form-id="holiday-form"
+      primary-text="Save holiday"
+      @close="form = null"
+      ><p v-if="error" class="px-error" role="alert">{{ error }}</p>
+      <form v-if="form" id="holiday-form" class="px-card px-form" @submit.prevent="save">
+        <h3 class="mt-0">{{ form.id ? 'Edit holiday' : 'New holiday' }}</h3>
+        <div class="px-form-row">
+          <div class="px-field">
+            <label for="holiday-name">Name</label
+            ><input id="holiday-name" v-model="form.name" required maxlength="191" />
+          </div>
+          <div class="px-field">
+            <label for="holiday-date">Date</label
+            ><input id="holiday-date" v-model="form.holiday_date" type="date" required />
+          </div>
+          <div class="px-field">
+            <label for="holiday-repeat">Repeat every year</label
+            ><select id="holiday-repeat" v-model.number="form.repeats_yearly">
+              <option :value="1">Yes</option>
+              <option :value="0">No, this year only</option>
+            </select>
+          </div>
+          <div class="px-field">
+            <label for="holiday-enabled">Block bookings</label
+            ><select id="holiday-enabled" v-model.number="form.enabled">
+              <option :value="1">Enabled</option>
+              <option :value="0">Disabled</option>
+            </select>
+          </div>
         </div>
         <div class="px-field">
-          <label for="holiday-date">Date</label
-          ><input id="holiday-date" v-model="form.holiday_date" type="date" required />
+          <label for="holiday-description">Description</label
+          ><textarea
+            id="holiday-description"
+            v-model="form.description"
+            rows="3"
+            required
+          ></textarea>
         </div>
-        <div class="px-field">
-          <label for="holiday-repeat">Repeat every year</label
-          ><select id="holiday-repeat" v-model.number="form.repeats_yearly">
-            <option :value="1">Yes</option>
-            <option :value="0">No, this year only</option>
-          </select>
-        </div>
-        <div class="px-field">
-          <label for="holiday-enabled">Block bookings</label
-          ><select id="holiday-enabled" v-model.number="form.enabled">
-            <option :value="1">Enabled</option>
-            <option :value="0">Disabled</option>
-          </select>
-        </div>
-      </div>
-      <div class="px-field">
-        <label for="holiday-description">Description</label
-        ><textarea id="holiday-description" v-model="form.description" rows="3" required></textarea>
-      </div>
-      <div class="px-actions">
-        <button class="px-button" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save holiday' }}</button
-        ><button
-          class="px-button px-button-ghost"
-          type="button"
-          :disabled="saving"
-          @click="form = null"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
+      </form>
+    </PxModal>
     <div class="px-card px-holiday-calendar"><FullCalendar :options="options" /></div>
     <div class="px-card">
       <h3 class="mt-0">Holiday schedule</h3>
