@@ -9,8 +9,9 @@ const props = withDefaults(
     busy?: boolean
     formId?: string
     hideFooter?: boolean
+    keepMounted?: boolean
   }>(),
-  { primaryText: 'Save changes', busy: false, hideFooter: false },
+  { primaryText: 'Save changes', busy: false, hideFooter: false, keepMounted: false },
 )
 const emit = defineEmits<{ close: []; submit: [] }>()
 const overlay = ref<HTMLElement | null>(null),
@@ -23,7 +24,13 @@ useModalDialog(() => props.open, overlay, dialog, close)
 </script>
 <template>
   <Teleport to="body"
-    ><div v-if="open" ref="overlay" class="px-modal-overlay" @mousedown.self="close">
+    ><div
+      v-if="open || keepMounted"
+      v-show="open"
+      ref="overlay"
+      class="px-modal-overlay"
+      @mousedown.self="close"
+    >
       <section
         ref="dialog"
         class="px-modal"
