@@ -31,6 +31,7 @@ class Transfer {
 			'customer_appointments',
 			'payments',
 			'notifications',
+			'holidays',
 		);
 	}
 
@@ -99,6 +100,7 @@ class Transfer {
 				$counts[ $table ] = $n;
 			}
 			$wpdb->query( 'COMMIT' );
+			\Praxleo\Appointment\Domain\Holidays::clear_cache();
 			\Praxleo\Appointment\Domain\Mailer::seed_templates();
 			return array(
 				'ok'     => true,
