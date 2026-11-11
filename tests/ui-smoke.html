@@ -2,6 +2,7 @@
 <div id="px-appointment-booking-app" data-location-id="0" data-service-id="0" data-staff-id="0"></div><pre id="test-result">RUNNING</pre>
 <script>
 const scenario=new URLSearchParams(location.search).get('scenario');
+const referralCode='0123456789abcdef0123456789abcdef';const referralUrl=new URL(location.href);referralUrl.searchParams.set('px_aff',referralCode);history.replaceState(null,'',referralUrl);
 if(scenario==='preset')document.getElementById('px-appointment-booking-app').dataset.locationId='2';
 window.pxAppointmentPublic={root:'/mock/',nonce:''};
 const result=document.getElementById('test-result');
@@ -22,6 +23,7 @@ window.fetch=async function(url,options={}){
  if(data===undefined)throw new Error('Unexpected request '+path);
  if(path==='appointments'){
   const payload=JSON.parse(options.body);
+  if(payload.affiliate_code!==referralCode)throw new Error('Affiliate referral missing from booking request');
   if(payload.service_id!==1||!payload.location_id||payload.staff_id!==1)throw new Error('Invalid service/location/staff in booking');
  }
  return new Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
@@ -39,6 +41,7 @@ window.addEventListener('load',async()=>{try{
   click('Try again');await waitFor(()=>document.querySelector('[aria-label="Loading services"]'));
  }
  await waitFor(()=>heading('Choose a service'));
+ if(!document.querySelector('.px-currency')?.textContent.includes('$ 50.00'))throw new Error('Service currency symbol or two decimal formatting missing');
  if(document.querySelector('.pxb-steps span').textContent.trim()!=='service')throw new Error('Service is not the first step');
  if(document.querySelectorAll('select').length!==2 || document.querySelector('.pxb-service-card select'))throw new Error('Filters must only appear at the top');
  const optionsFor=label=>Array.from(Array.from(document.querySelectorAll('.pxb-filters label')).find(element=>element.textContent.trim().startsWith(label)).querySelector('select').options).map(option=>option.value);
