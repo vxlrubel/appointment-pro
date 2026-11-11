@@ -1,102 +1,35 @@
 ﻿<script setup lang="ts">
-import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
-
-const props = withDefaults(
-  defineProps<{
-    open: boolean
-    heading?: string
-    bodyText?: string
-  }>(),
-  {
-    heading: 'Confirm deletion',
-    bodyText: 'Permanently delete the selected records?',
+import { ref, useId, watch } from 'vue'
+import { useModalDialog } from '../composables/useModalDialog'
+const props = withDefaults(defineProps<{ open: boolean; heading?: string; bodyText?: string }>(), {
+  heading: 'Confirm deletion',
+  bodyText: 'Permanently delete the selected records?',
+})
+const emit = defineEmits<{ confirm: []; cancel: [] }>()
+const dialog = ref<HTMLElement | null>(null),
+  overlay = ref<HTMLElement | null>(null),
+  noButton = ref<HTMLButtonElement | null>(null)
+const id = useId()
+let answered = false
+watch(
+  () => props.open,
+  (value) => {
+    if (value) answered = false
   },
 )
-const emit = defineEmits<{ confirm: []; cancel: [] }>()
-const dialog = ref<HTMLElement | null>(null)
-const overlay = ref<HTMLElement | null>(null)
-const noButton = ref<HTMLButtonElement | null>(null)
-const id = useId()
-let previousFocus: HTMLElement | null = null
-let previousOverflow = ''
-let locked = false
-let answered = false
-let background: Array<{ element: HTMLElement; inert: boolean }> = []
-
 function respond(confirmed: boolean) {
   if (!props.open || answered) return
   answered = true
   if (confirmed) emit('confirm')
   else emit('cancel')
 }
-
-function keydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    respond(false)
-  }
-  if (event.key === 'Tab') {
-    const buttons = Array.from(
-      dialog.value?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') || [],
-    )
-    const first = buttons[0]
-    const last = buttons[buttons.length - 1]
-    if (
-      event.shiftKey &&
-      (document.activeElement === first || !dialog.value?.contains(document.activeElement))
-    ) {
-      event.preventDefault()
-      last?.focus()
-    } else if (
-      !event.shiftKey &&
-      (document.activeElement === last || !dialog.value?.contains(document.activeElement))
-    ) {
-      event.preventDefault()
-      first?.focus()
-    }
-  }
-}
-
-function release() {
-  document.removeEventListener('keydown', keydown, true)
-  if (!locked) return
-  for (const { element, inert } of background) element.inert = inert
-  background = []
-  document.body.style.overflow = previousOverflow
-  locked = false
-  if (previousFocus?.isConnected) previousFocus.focus()
-  previousFocus = null
-}
-
-watch(
+useModalDialog(
   () => props.open,
-  async (open) => {
-    if (!open) {
-      release()
-      return
-    }
-    answered = false
-    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    await nextTick()
-    if (!props.open) return
-    previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    background = Array.from(document.body.children)
-      .filter(
-        (element): element is HTMLElement =>
-          element instanceof HTMLElement && !element.contains(overlay.value),
-      )
-      .map((element) => ({ element, inert: element.inert }))
-    for (const { element } of background) element.inert = true
-    locked = true
-    document.addEventListener('keydown', keydown, true)
-    noButton.value?.focus()
-  },
-  { immediate: true, flush: 'post' },
+  overlay,
+  dialog,
+  () => respond(false),
+  noButton,
 )
-
-onBeforeUnmount(release)
 </script>
 
 <template>
