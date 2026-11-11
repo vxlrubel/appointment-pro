@@ -245,10 +245,10 @@ onMounted(load)
         </div>
         <div class="px-field">
           <label>Enabled</label>
-          <select v-model.number="form.enabled">
+          <PxSelect aria-label="Enabled" v-model.number="form.enabled">
             <option :value="1">Yes</option>
             <option :value="0">No</option>
-          </select>
+          </PxSelect>
         </div>
       </div>
     </form>
@@ -310,16 +310,16 @@ onMounted(load)
       <h3>Services at locations</h3>
 
       <div v-for="(link, index) in services" :key="'svc-' + index" class="px-row">
-        <select v-model.number="link.service_id">
+        <PxSelect aria-label="Service" v-model.number="link.service_id">
           <option v-for="service in allServices" :key="service.id" :value="service.id">
             {{ service.name }}
           </option>
-        </select>
-        <select v-model.number="link.location_id">
+        </PxSelect>
+        <PxSelect aria-label="Location" v-model.number="link.location_id">
           <option v-for="location in locations" :key="location.id" :value="location.id">
             {{ location.name }}
           </option>
-        </select>
+        </PxSelect>
         <input
           v-model.number="link.price"
           type="number"
