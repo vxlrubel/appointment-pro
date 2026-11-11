@@ -244,30 +244,30 @@ onMounted(load)
       <div class="px-form-row">
         <div class="px-field">
           <label>Location</label>
-          <select v-model.number="form.location_id">
+          <PxSelect aria-label="Location" v-model.number="form.location_id">
             <option v-for="location in locations" :key="location.id" :value="location.id">
               {{ location.name }}
             </option>
-          </select>
+          </PxSelect>
         </div>
 
         <div class="px-field">
           <label>Service</label>
-          <select v-model.number="form.service_id">
+          <PxSelect aria-label="Service" v-model.number="form.service_id">
             <option v-for="service in services" :key="service.id" :value="service.id">
               {{ service.name }}
             </option>
-          </select>
+          </PxSelect>
         </div>
 
         <div class="px-field">
           <label>Staff</label>
-          <select v-model.number="form.staff_id">
+          <PxSelect aria-label="Staff" v-model.number="form.staff_id">
             <option value="">Any staff</option>
             <option v-for="member in staff" :key="member.id" :value="member.id">
               {{ member.full_name }}
             </option>
-          </select>
+          </PxSelect>
         </div>
 
         <div class="px-field">
@@ -277,21 +277,21 @@ onMounted(load)
 
         <div class="px-field">
           <label>Time</label>
-          <select v-model="form.start">
+          <PxSelect aria-label="Time" v-model="form.start">
             <option value="">Select a slot</option>
             <option v-for="slot in slots" :key="slot.start + slot.staff_id" :value="slot.start">
               {{ slot.display
               }}{{ !form.staff_id && slot.staff_id ? ' (staff #' + slot.staff_id + ')' : '' }}
             </option>
-          </select>
+          </PxSelect>
         </div>
 
         <div class="px-field">
           <label>Status</label>
-          <select v-model="form.status">
+          <PxSelect aria-label="Status" v-model="form.status">
             <option value="approved">Approved</option>
             <option value="pending">Pending</option>
-          </select>
+          </PxSelect>
         </div>
       </div>
 
