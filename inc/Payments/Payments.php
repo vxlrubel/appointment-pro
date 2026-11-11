@@ -102,8 +102,8 @@ class Payments {
 
 		$fresh['amount'] = $amount;
 
-		Mailer::send_event( 'booking_created_customer', $fresh );
-		Mailer::send_event( 'booking_created_admin', $fresh );
+		Mailer::send_group( 'booking_created', $fresh );
+		if ( $auto_approve ) { Mailer::send_group( 'booking_approved', $fresh ); }
 
 		return $fresh;
 	}
@@ -144,15 +144,14 @@ class Payments {
 		$auto = \Praxleo\Appointment\Domain\Settings::get( 'auto_approve', true );
 		\Praxleo\Appointment\Domain\Appointments::set_status( $appointment_id, $auto ? 'approved' : 'pending', false );
 		$hydrated = Appointments::hydrate( $appointment_id );
-		\Praxleo\Appointment\Domain\Mailer::send_event( 'booking_created_customer', $hydrated );
-		\Praxleo\Appointment\Domain\Mailer::send_event( 'booking_created_admin', $hydrated );
+		Mailer::send_group( 'booking_created', $hydrated );
 		if ( $auto ) {
-			\Praxleo\Appointment\Domain\Mailer::send_event( 'booking_approved_customer', $hydrated );
+			Mailer::send_group( 'booking_approved', $hydrated );
 		}
 	}
 
 	public static function stripe_intent( $hydrated, $amount ) {
-		$secret = \Praxleo\Appointment\Domain\Settings::get( 'stripe_secret' );
+		$secret = Settings::gateway( 'stripe' )['secret'];
 		if ( ! $secret ) {
 			return new WP_Error( 'stripe', __( 'Stripe is not configured.', 'appointment-pro' ), array( 'status' => 400 ) );
 		}
@@ -169,7 +168,7 @@ class Payments {
 			array(
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $secret,
-					'Idempotency-Key' => 'px-appointment-' . $hydrated['customer_appointment']['id'],
+					'Idempotency-Key' => 'px-appointment-' . $hydrated['customer_appointment']['id'] . '-' . Settings::gateway( 'stripe' )['environment'],
 				),
 				'body'    => $body,
 				'timeout' => 20,
@@ -187,7 +186,7 @@ class Payments {
 			'stripe',
 			'pending',
 			$amount,
-			array( 'payment_intent' => $data['id'] )
+			array( 'payment_intent' => $data['id'], 'environment' => Settings::gateway( 'stripe' )['environment'] )
 		);
 		return array(
 			'client_secret' => $data['client_secret'],
@@ -196,7 +195,7 @@ class Payments {
 	}
 
 	public static function handle_stripe_webhook( $payload, $sig ) {
-		$secret = Settings::get( 'stripe_webhook_secret' );
+		$secret = Settings::gateway( 'stripe' )['webhook_secret'];
 		$parts = array();
 		foreach ( explode( ',', (string) $sig ) as $part ) { $pair = explode( '=', $part, 2 ); if ( count( $pair ) === 2 ) { $parts[ $pair[0] ][] = $pair[1]; } }
 		$timestamp = (int) ( $parts['t'][0] ?? 0 );
@@ -248,7 +247,7 @@ class Payments {
 				'headers' => array(
 					'Authorization' => 'Bearer ' . $token,
 					'Content-Type'  => 'application/json',
-					'PayPal-Request-Id' => 'px-appointment-' . $hydrated['customer_appointment']['id'],
+					'PayPal-Request-Id' => 'px-appointment-' . $hydrated['customer_appointment']['id'] . '-' . Settings::gateway( 'paypal' )['environment'],
 				),
 				'body'    => wp_json_encode(
 					array(
@@ -279,7 +278,7 @@ class Payments {
 			'paypal',
 			'pending',
 			$amount,
-			array( 'order_id' => $data['id'] )
+			array( 'order_id' => $data['id'], 'environment' => Settings::gateway( 'paypal' )['environment'] )
 		);
 		return $data;
 	}
@@ -315,8 +314,8 @@ class Payments {
 	}
 
 	private static function paypal_token() {
-		$id     = \Praxleo\Appointment\Domain\Settings::get( 'paypal_client_id' );
-		$secret = \Praxleo\Appointment\Domain\Settings::get( 'paypal_secret' );
+		$id     = Settings::gateway( 'paypal' )['client_id'];
+		$secret = Settings::gateway( 'paypal' )['secret'];
 		if ( ! $id || ! $secret ) {
 			return new WP_Error( 'paypal', __( 'PayPal is not configured.', 'appointment-pro' ), array( 'status' => 400 ) );
 		}
@@ -348,7 +347,7 @@ class Payments {
 		if ( ! $data ) {
 			return new WP_Error( 'bad', 'Invalid payload', array( 'status' => 400 ) );
 		}
-		$webhook_id = Settings::get( 'paypal_webhook_id' );
+		$webhook_id = Settings::gateway( 'paypal' )['webhook_id'];
 		$token = self::paypal_token();
 		if ( ! $webhook_id || is_wp_error( $token ) ) { return new WP_Error( 'signature', 'PayPal webhook verification is not configured.', array( 'status' => 400 ) ); }
 		$verification = array( 'webhook_id' => $webhook_id, 'webhook_event' => $data );
