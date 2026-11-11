@@ -1,19 +1,36 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import DeleteConfirmation from '../components/DeleteConfirmation.vue'
+import { useDeleteConfirmation } from '../composables/useDeleteConfirmation'
+
+const { confirmation, confirmDelete, resolveDelete } = useDeleteConfirmation()
+const deleting = ref(false)
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
 
 const loading = ref(true)
 
 const selected = ref([])
 async function bulkDelete() {
-  if (!selected.value.length || !window.confirm('Delete selected records?')) return
+  if (loading.value || deleting.value || !selected.value.length) return
+  const ids = [...selected.value]
+  if (
+    !(await confirmDelete({
+      heading: 'Delete selected staff records?',
+      bodyText: `Permanently delete ${ids.length} selected staff records? This cannot be undone.`,
+    }))
+  )
+    return
+  deleting.value = true
+  error.value = ''
   try {
-    await api('admin/staff/bulk-delete', { method: 'POST', body: { ids: selected.value } })
+    await api('admin/staff/bulk-delete', { method: 'POST', body: { ids } })
     selected.value = []
     await load()
   } catch (e) {
     error.value = e.message
+  } finally {
+    deleting.value = false
   }
 }
 const rows = ref([])
@@ -30,6 +47,13 @@ async function addDayOff() {
   }
 }
 async function removeDayOff(id) {
+  if (
+    !(await confirmDelete({
+      heading: 'Delete time off?',
+      bodyText: 'Remove this staff time off record?',
+    }))
+  )
+    return
   try {
     await api('staff-days-off/' + id, { method: 'DELETE' })
     daysOff.value = await api('staff/' + editing.value + '/days-off')
@@ -157,10 +181,15 @@ onMounted(load)
 </script>
 
 <template>
+  <DeleteConfirmation
+    v-bind="confirmation"
+    @confirm="resolveDelete(true)"
+    @cancel="resolveDelete(false)"
+  />
   <div class="px-toolbar">
     <button
       class="px-button px-button-danger"
-      :disabled="loading || !selected.length"
+      :disabled="loading || deleting || !selected.length"
       @click="bulkDelete"
     >
       Delete selected
@@ -328,7 +357,12 @@ onMounted(load)
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(row, index) in rows" :key="row.id" class="px-table-row" :style="{ '--px-table-row-index': index + 1 }">
+        <tr
+          v-for="(row, index) in rows"
+          :key="row.id"
+          class="px-table-row"
+          :style="{ '--px-table-row-index': index + 1 }"
+        >
           <td>
             <input v-model="selected" type="checkbox" :value="row.id" aria-label="Select record" />
           </td>
