@@ -165,17 +165,17 @@ onMounted(load)
           </div>
           <div class="px-field">
             <label for="holiday-repeat">Repeat every year</label
-            ><select id="holiday-repeat" v-model.number="form.repeats_yearly">
+            ><PxSelect id="holiday-repeat" v-model.number="form.repeats_yearly">
               <option :value="1">Yes</option>
               <option :value="0">No, this year only</option>
-            </select>
+            </PxSelect>
           </div>
           <div class="px-field">
             <label for="holiday-enabled">Block bookings</label
-            ><select id="holiday-enabled" v-model.number="form.enabled">
+            ><PxSelect id="holiday-enabled" v-model.number="form.enabled">
               <option :value="1">Enabled</option>
               <option :value="0">Disabled</option>
-            </select>
+            </PxSelect>
           </div>
         </div>
         <div class="px-field">
