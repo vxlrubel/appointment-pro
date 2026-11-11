@@ -1,4 +1,5 @@
-import PxCurrency from '../../shared/PxCurrency.vue';
+import PxSelect from '../../shared/PxSelect.vue'
+import PxCurrency from '../../shared/PxCurrency.vue'
 import './assets/main.css'
 
 import { createApp } from 'vue'
@@ -9,6 +10,7 @@ import router from './router'
 
 const app = createApp(App)
 
+app.component('PxSelect', PxSelect)
 app.component('PxCurrency', PxCurrency)
 app.use(createPinia())
 app.use(router)
