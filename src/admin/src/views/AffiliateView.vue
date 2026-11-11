@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
+import { copyText } from '../utils/clipboard'
 import PxModal from '../components/PxModal.vue'
 import DeleteConfirmation from '../components/DeleteConfirmation.vue'
 import { useDeleteConfirmation } from '../composables/useDeleteConfirmation'
@@ -92,8 +93,10 @@ async function toggle(row) {
   }
 }
 async function copy(row) {
+  error.value = ''
+  message.value = ''
   try {
-    await navigator.clipboard.writeText(row.link)
+    await copyText(row.link)
     message.value = 'Affiliate link copied.'
   } catch {
     error.value = 'Copy is unavailable. Select the link text and copy it manually.'
