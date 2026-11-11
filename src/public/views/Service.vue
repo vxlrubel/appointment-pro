@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useBooking } from "../store";
@@ -100,7 +100,7 @@ async function pick(service) {
     <div class="pxb-filters">
       <label
         >Location
-        <select :value="store.locationFilterId" @change="changeLocation">
+        <PxSelect :value="store.locationFilterId" @change="changeLocation">
           <option :value="0">All locations</option>
           <option
             v-for="location in locationOptions"
@@ -109,11 +109,11 @@ async function pick(service) {
           >
             {{ location.name }}
           </option>
-        </select>
+        </PxSelect>
       </label>
       <label
         >Category
-        <select :value="store.categoryFilterId" @change="changeCategory">
+        <PxSelect :value="store.categoryFilterId" @change="changeCategory">
           <option value="">All categories</option>
           <option
             v-for="category in categoryOptions"
@@ -122,7 +122,7 @@ async function pick(service) {
           >
             {{ category.name }}
           </option>
-        </select>
+        </PxSelect>
       </label>
     </div>
     <p class="pxb-muted" aria-live="polite">
