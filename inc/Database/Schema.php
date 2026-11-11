@@ -17,7 +17,7 @@ class Schema {
 	/**
 	 * Current database version.
 	 */
-	public const DB_VERSION = '1.2.0';
+	public const DB_VERSION = '1.3.0';
 
 	/**
 	 * Return a prefixed table name.
@@ -151,6 +151,7 @@ class Schema {
 			location_id bigint(20) unsigned NOT NULL,
 			service_id bigint(20) unsigned NOT NULL,
 			staff_id bigint(20) unsigned NOT NULL,
+			affiliate_id bigint(20) unsigned NULL,
 			start_datetime datetime NOT NULL,
 			end_datetime datetime NOT NULL,
 			status varchar(32) NOT NULL DEFAULT 'pending',
@@ -161,7 +162,8 @@ class Schema {
 			PRIMARY KEY  (id),
 			UNIQUE KEY idempotency_key (idempotency_key),
 			KEY staff_start (staff_id, start_datetime, end_datetime),
-			KEY status (status)
+			KEY status (status),
+			KEY affiliate_id (affiliate_id)
 		) $charset;";
 
 		$sql[] = "CREATE TABLE {$p}customer_appointments (
@@ -261,6 +263,25 @@ class Schema {
 			KEY holiday_date (holiday_date)
 		) $charset;";
 
+        $sql[] = "CREATE TABLE {$p}business_hours (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            weekday tinyint(1) unsigned NOT NULL,
+            location_id bigint(20) unsigned NULL,
+            start_time time NOT NULL,
+            end_time time NOT NULL,
+            breaks_json longtext NULL,
+            PRIMARY KEY  (id)
+        ) $charset;";
+        $sql[] = "CREATE TABLE {$p}affiliates (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            name varchar(191) NOT NULL,
+            code varchar(32) NOT NULL,
+            booking_url text NOT NULL,
+            enabled tinyint(1) NOT NULL DEFAULT 1,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY code (code)
+        ) $charset;";
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
 		}
