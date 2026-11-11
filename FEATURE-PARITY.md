@@ -20,13 +20,13 @@ The bundled `praxleo-booking` folder is the reference. Its plugin files remain u
 | Local payment, Stripe, PayPal, WooCommerce | Provider handlers and WooCommerce hooks added; Stripe card confirmation and PayPal buttons implemented |
 | Email templates, placeholders, booking/cancellation mail, reminders | Existing mailer and hourly maintenance retained; cancellation links connected |
 | Dashboard and payment history | Existing admin screens retained |
-| Demo data, reset, CSV export/import | Database screen; all 17 reference tables supported; reset retains templates |
+| Demo data, reset, CSV export/import | Database screen; all 17 reference tables plus clinic holidays supported; reset retains templates |
 | Documentation | Documentation screen with current shortcode and webhook paths |
 | Optional uninstall cleanup | Data retained unless deletion is enabled in Settings |
 
 ## Payment setup
 
-Configure enabled providers in Settings. Stripe requires its publishable/secret keys and webhook signing secret. Use `/wp-json/px-appointment/v1/webhooks/stripe` for payment intent success/failure events. PayPal requires its client ID/secret and webhook ID; use `/wp-json/px-appointment/v1/webhooks/paypal`. WooCommerce requires an active WooCommerce installation.
+Configure enabled providers in Settings. Stripe and PayPal keep sandbox and live keys and webhook credentials separately; public checkout resolves only the selected environment. Stripe requires its publishable/secret keys and webhook signing secret. Use `/wp-json/px-appointment/v1/webhooks/stripe` for payment intent success/failure events. PayPal requires its client ID/secret and webhook ID; use `/wp-json/px-appointment/v1/webhooks/paypal`. WooCommerce requires an active WooCommerce installation.
 
 Webhook verification follows the provider references: [Stripe signature verification](https://docs.stripe.com/webhooks/signature) and [PayPal webhooks](https://developer.paypal.com/api/rest/webhooks/rest/).
 
@@ -52,3 +52,9 @@ The public catalog includes location IDs for enabled staff/service assignments. 
 The date-and-time step uses an always-visible month calendar. A monthly availability endpoint returns actual slot counts, including staff schedules, days off, existing bookings, extras, and booking limits. Dates with zero slots are disabled, and month navigation stays within the booking window.
 
 Bookable service cards remain enabled with both filters set to All. Selecting a service automatically selects its category and retains a compatible selected location, falling back to the first assigned location in the configured location order.
+
+## Extended administration features
+
+- Holiday: FullCalendar month view with required name, description, and date, yearly recurrence, edit/delete, and booking availability enforcement in the company timezone.
+- Notifications: Admin, Staff, and Customer tabs; four event types per audience; additional customer email and optional admin copies; plain-text previews limited to 30 characters with complete HTML editing.
+- Medical demo: 30 appointments, 30 services, 5 categories, 5 staff, 5 locations, 2 extras, 2 coupons, and 3 custom fields.
