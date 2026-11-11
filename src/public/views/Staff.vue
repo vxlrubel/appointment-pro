@@ -19,7 +19,7 @@ async function pick(m, any) {
       v-if="store.lockedServiceId && store.serviceLocations.length > 1"
       class="pxb-service-location"
       >Location
-      <select
+      <PxSelect
         :value="store.location?.id"
         @change="store.pickService(store.service, Number($event.target.value))"
       >
@@ -30,7 +30,7 @@ async function pick(m, any) {
         >
           {{ location.name }}
         </option>
-      </select>
+      </PxSelect>
     </label>
     <button
       v-if="store.staff.length"
