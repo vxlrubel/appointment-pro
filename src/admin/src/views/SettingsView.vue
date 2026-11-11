@@ -2,14 +2,34 @@
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
-
-const loading = ref(true)
-
-const form = ref({})
-const error = ref('')
-const saved = ref(false)
-const saving = ref(false)
-
+const loading = ref(true),
+  form = ref({}),
+  error = ref(''),
+  saved = ref(false),
+  saving = ref(false)
+const gateways = [
+  {
+    key: 'stripe',
+    name: 'Stripe',
+    fields: [
+      { key: 'publishable', label: 'Publishable key', type: 'text' },
+      { key: 'secret', label: 'Secret key', type: 'password' },
+      { key: 'webhook_secret', label: 'Webhook signing secret', type: 'password' },
+    ],
+  },
+  {
+    key: 'paypal',
+    name: 'PayPal',
+    fields: [
+      { key: 'client_id', label: 'Client ID', type: 'text' },
+      { key: 'secret', label: 'Secret', type: 'password' },
+      { key: 'webhook_id', label: 'Webhook ID', type: 'text' },
+    ],
+  },
+]
+function credentialKey(gateway, field) {
+  return gateway.key + (form.value[gateway.key + '_sandbox'] ? '_sandbox_' : '_') + field.key
+}
 onMounted(async () => {
   try {
     form.value = await api('settings')
@@ -19,12 +39,10 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
 async function save() {
   saving.value = true
   error.value = ''
   saved.value = false
-
   try {
     form.value = await api('settings', { method: 'POST', body: form.value })
     saved.value = true
@@ -35,159 +53,133 @@ async function save() {
   }
 }
 </script>
-
 <template>
-  <p v-if="error" class="px-error">{{ error }}</p>
-  <p v-if="saved" class="px-muted">Settings saved.</p>
-
-
-
-
-  <LoadingSkeleton v-if="loading" variant="form" :columns="4" label="Loading settings" />
+  <p v-if="error" class="px-error" role="alert">{{ error }}</p>
+  <p v-if="saved" class="px-success" role="status">Settings saved.</p>
+  <LoadingSkeleton v-if="loading" variant="form" label="Loading settings" />
   <form v-else @submit.prevent="save">
-  <fieldset class="px-fieldset px-anim-fadein" style="--px-table-row-index: 0">
-	  <legend>Company Settings</legend>
-
-	  <div class="px-field-row">
-		<div>
-			<div class="px-field mb-3">
-				<label>Company name</label>
-				<input v-model="form.company_name" />
-			</div>
-			<div class="px-field">
-				<label>Company email</label>
-				<input v-model="form.company_email" type="email" />
-			</div>
-		</div>
-		<div>
-			<div class="px-field mb-3">
-				<label>Timezone</label>
-				<input v-model="form.timezone" />
-			</div>
-			<div class="px-field">
-				<label>Slot length (min)</label>
-				<input v-model.number="form.slot_length" type="number" min="5" />
-			</div>
-		</div>
-		<div>
-			<div class="px-field mb-3">
-				<label>Currency</label>
-				<input v-model="form.currency" />
-			</div>
-			<div class="px-field">
-				<label>Auto-approve</label>
-				<select v-model="form.auto_approve">
-				<option :value="true">Yes</option>
-				<option :value="false">No</option>
-				</select>
-			</div>
-
-		</div>
-	  </div>
-
-   </fieldset>
-  <fieldset class="px-fieldset px-anim-fadein" style="--px-table-row-index: 1">
-	  <legend>Rules & Reminders</legend>
-
-	  <div class="px-field-row">
-		<div
-			class="px-field"
-			v-for="field in [
-			{ key: 'hold_ttl', label: 'Payment hold (seconds)' },
-			{ key: 'min_lead_hours', label: 'Minimum notice (hours)' },
-			{ key: 'max_lead_days', label: 'Book ahead (days)' },
-			{ key: 'reminder_hours', label: 'Reminder before appointment (hours)' },
-			]"
-			:key="field.key"
-		>
-			<label>{{ field.label }}</label
-			><input v-model.number="form[field.key]" type="number" min="0" />
-		</div>
-	  </div>
-	  <div class="px-field-row mt-3">
-		<div class="px-field">
-				<label>PayPal sandbox</label
-				><select v-model="form.paypal_sandbox">
-				<option :value="true">On</option>
-				<option :value="false">Off</option>
-				</select>
-			</div>
-			<div class="px-field">
-				<label>Delete data on uninstall</label
-				><select v-model="form.delete_data_on_uninstall">
-				<option :value="false">Keep data</option>
-				<option :value="true">Delete data</option>
-				</select>
-			</div>
-			<div class="px-field">
-				<label>Stripe webhook signing secret</label
-				><input v-model="form.stripe_webhook_secret" type="password" />
-			</div>
-
-			<div class="px-field">
-				<label>PayPal webhook ID</label><input v-model="form.paypal_webhook_id" />
-			</div>
-	  </div>
-
-   </fieldset>
-  <fieldset class="px-fieldset px-anim-fadein" style="--px-table-row-index: 2">
-	  <legend>Payments Getway</legend>
-
-	  <div class="px-field-row">
-		<div>
-			<div class="px-field mb-3">
-				<label>Local payments</label>
-				<select v-model="form.local_enabled">
-				<option :value="true">On</option>
-				<option :value="false">Off</option>
-				</select>
-			</div>
-			<div class="px-field">
-				<label>WooCommerce</label>
-				<select v-model="form.woocommerce_enabled">
-				<option :value="true">On</option>
-				<option :value="false">Off</option>
-				</select>
-			</div>
-		</div>
-		<div>
-			<div class="px-field mb-3">
-				<label>Stripe enabled</label>
-				<select v-model="form.stripe_enabled">
-				<option :value="true">On</option>
-				<option :value="false">Off</option>
-				</select>
-			</div>
-			<div class="px-field mb-3">
-				<label>Stripe publishable key</label>
-				<input v-model="form.stripe_publishable" />
-			</div>
-			<div class="px-field">
-				<label>Stripe secret key</label>
-				<input v-model="form.stripe_secret" type="password" />
-			</div>
-		</div>
-		<div>
-			<div class="px-field mb-3">
-				<label>PayPal enabled</label>
-				<select v-model="form.paypal_enabled">
-				<option :value="true">On</option>
-				<option :value="false">Off</option>
-				</select>
-			</div>
-			<div class="px-field mb-3">
-				<label>PayPal client ID</label>
-				<input v-model="form.paypal_client_id" />
-			</div>
-			<div class="px-field">
-				<label>PayPal secret</label>
-				<input v-model="form.paypal_secret" type="password" />
-			</div>
-		</div>
-	  </div>
-
-   </fieldset>
-
+    <fieldset class="px-fieldset px-anim-fadein" style="--px-table-row-index: 0">
+      <legend>Company Settings</legend>
+      <div class="px-field-row">
+        <div
+          v-for="field in [
+            { key: 'company_name', label: 'Company name' },
+            { key: 'company_email', label: 'Company email', type: 'email' },
+            { key: 'timezone', label: 'Timezone' },
+            { key: 'currency', label: 'Currency' },
+          ]"
+          :key="field.key"
+          class="px-field"
+        >
+          <label :for="field.key">{{ field.label }}</label
+          ><input :id="field.key" v-model="form[field.key]" :type="field.type || 'text'" />
+        </div>
+        <div class="px-field">
+          <label for="slot-length">Slot length (min)</label
+          ><input id="slot-length" v-model.number="form.slot_length" type="number" min="5" />
+        </div>
+        <div class="px-field">
+          <label for="auto-approve">Auto-approve</label
+          ><select id="auto-approve" v-model="form.auto_approve">
+            <option :value="true">Yes</option>
+            <option :value="false">No</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+    <fieldset class="px-fieldset px-anim-fadein" style="--px-table-row-index: 1">
+      <legend>Rules &amp; Reminders</legend>
+      <div class="px-field-row">
+        <div
+          v-for="field in [
+            { key: 'hold_ttl', label: 'Payment hold (seconds)' },
+            { key: 'min_lead_hours', label: 'Minimum notice (hours)' },
+            { key: 'max_lead_days', label: 'Book ahead (days)' },
+            { key: 'reminder_hours', label: 'Reminder before appointment (hours)' },
+          ]"
+          :key="field.key"
+          class="px-field"
+        >
+          <label :for="field.key">{{ field.label }}</label
+          ><input :id="field.key" v-model.number="form[field.key]" type="number" min="0" />
+        </div>
+        <div class="px-field">
+          <label for="uninstall-data">Delete data on uninstall</label
+          ><select id="uninstall-data" v-model="form.delete_data_on_uninstall">
+            <option :value="false">Keep data</option>
+            <option :value="true">Delete data</option>
+          </select>
+        </div>
+      </div>
+    </fieldset>
+    <fieldset class="px-fieldset px-anim-fadein" style="--px-table-row-index: 2">
+      <legend>Payment Gateways</legend>
+      <div class="px-field-row">
+        <div
+          v-for="gateway in [
+            { key: 'local', name: 'Local payments' },
+            { key: 'woocommerce', name: 'WooCommerce' },
+          ]"
+          :key="gateway.key"
+          class="px-field"
+        >
+          <label :for="gateway.key + '-enabled'">{{ gateway.name }}</label
+          ><select :id="gateway.key + '-enabled'" v-model="form[gateway.key + '_enabled']">
+            <option :value="true">On</option>
+            <option :value="false">Off</option>
+          </select>
+        </div>
+      </div>
+      <div class="px-gateway-grid">
+        <section
+          v-for="gateway in gateways"
+          :key="gateway.key"
+          class="px-card px-gateway-panel"
+          :aria-label="gateway.name + ' settings'"
+        >
+          <h3>{{ gateway.name }}</h3>
+          <div class="px-field">
+            <label :for="gateway.key + '-enabled'">{{ gateway.name }} enabled</label
+            ><select :id="gateway.key + '-enabled'" v-model="form[gateway.key + '_enabled']">
+              <option :value="true">On</option>
+              <option :value="false">Off</option>
+            </select>
+          </div>
+          <template v-if="form[gateway.key + '_enabled']"
+            ><div class="px-field">
+              <label :for="gateway.key + '-sandbox'">{{ gateway.name }} sandbox</label
+              ><select :id="gateway.key + '-sandbox'" v-model="form[gateway.key + '_sandbox']">
+                <option :value="true">On — Sandbox</option>
+                <option :value="false">Off — Live</option>
+              </select>
+            </div>
+            <p class="px-muted">
+              {{
+                form[gateway.key + '_sandbox']
+                  ? 'Sandbox credentials for test payments.'
+                  : 'Live credentials for real payments.'
+              }}
+              Sandbox and live values are saved separately.
+            </p>
+            <div
+              v-for="field in gateway.fields"
+              :key="credentialKey(gateway, field)"
+              class="px-field"
+            >
+              <label :for="credentialKey(gateway, field)"
+                >{{ form[gateway.key + '_sandbox'] ? 'Sandbox' : 'Live' }} {{ gateway.name }}
+                {{ field.label }}</label
+              ><input
+                :id="credentialKey(gateway, field)"
+                v-model="form[credentialKey(gateway, field)]"
+                :type="field.type"
+                autocomplete="off"
+              />
+            </div>
+          </template>
+        </section>
+      </div>
+    </fieldset>
     <div class="px-actions">
       <button class="px-button" type="submit" :disabled="saving">
         {{ saving ? 'Saving...' : 'Save settings' }}
@@ -195,3 +187,20 @@ async function save() {
     </div>
   </form>
 </template>
+<style scoped>
+.px-gateway-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+.px-gateway-panel {
+  margin-bottom: 0;
+}
+.px-gateway-panel h3 {
+  margin-top: 0;
+}
+.px-gateway-panel .px-field {
+  margin-bottom: 14px;
+}
+</style>
