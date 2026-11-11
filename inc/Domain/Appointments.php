@@ -282,12 +282,11 @@ class Appointments {
 		}
 
 		if ( $notify && 'approved' === $status ) {
-			Mailer::send_event( 'booking_approved_customer', $hydrated );
+			Mailer::send_group( 'booking_approved', $hydrated );
 		}
 
 		if ( $notify && ( 'cancelled' === $status || 'rejected' === $status ) ) {
-			Mailer::send_event( 'booking_cancelled_customer', $hydrated );
-			Mailer::send_event( 'booking_cancelled_admin', $hydrated );
+			Mailer::send_group( 'booking_cancelled', $hydrated );
 		}
 
 		return $hydrated;
