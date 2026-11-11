@@ -339,3 +339,13 @@
     min-height: 38px;
   }
 }
+
+.pxb-sandbox-badge {
+  margin-left: 8px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: #fff4dc;
+  color: #875800;
+  font-size: 11px;
+  font-weight: 600;
+}
