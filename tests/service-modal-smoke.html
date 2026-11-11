@@ -19,7 +19,8 @@ window.fetch=async(url,options={})=>{
  if(path==='locations')data=[{id:1,name:'Central Medical Center'},{id:2,name:'Heart Care Clinic'}];
  if(path==='services')data={services:[{id:1,name:'Annual Health Examination',category_id:1,price:50,duration_sec:1800,location_ids:[1,2]},{id:2,name:'Cardiology Consultation',category_id:2,price:60,duration_sec:1800,location_ids:[2]}],categories:[{id:1,name:'Primary Care'},{id:2,name:'Cardiology'}]};
  if(path==='staff')data=[{id:serviceId,full_name:'Doctor '+serviceId,override_price:serviceId===1?45:60}];
- if(path==='extras'||path==='custom-fields')data=[];
+ if(path==='extras')data=[];
+ if(path==='custom-fields')data=[{id:1,label:'Preferred contact',type:'select',required:1,options_json:JSON.stringify(['Email','Phone'])}];
  if(path==='availability/dates')data={month:'2026-12',dates:{'2026-12-03':1},today:'2026-12-01',min_date:'2026-12-01',max_date:'2026-12-31'};
  if(path==='availability')data=[{staff_id:serviceId,start:'2026-12-03 09:00:00',display:'09:00'}];
  if(path==='appointments'){lastPayload=JSON.parse(options.body);bookings++;data={appointment:{id:bookings,status:'approved'},customer_appointment:{token:'0123456789abcdef0123456789abcdef'},amount:45,payments:[{status:'completed',amount:45}]};}
@@ -43,9 +44,9 @@ window.addEventListener('load',async()=>{try{
  const locationSelect=overlay().querySelector('.pxb-service-location select');if(!locationSelect)throw new Error('Related service locations not available');locationSelect.value='2';locationSelect.dispatchEvent(new Event('change',{bubbles:true}));await waitFor(()=>overlay().querySelector('[aria-label="Loading booking options"]'));await waitFor(()=>heading('Choose staff') && overlay().textContent.includes('Doctor 1'));
  click('Doctor 1');await waitFor(()=>heading('Date and time'));await waitFor(()=>overlay().querySelector('.pxb-slot'));
  await close();if(document.activeElement!==first)throw new Error('Modal did not restore trigger focus');first.click();await waitFor(()=>heading('Date and time'));
- click('09:00');await waitFor(()=>heading('Your details'));field('Full name','Modal Patient');field('Email','patient@example.test');overlay().querySelector('form').requestSubmit();await waitFor(()=>heading('Payment'));
+ click('09:00');await waitFor(()=>heading('Your details'));field('Full name','Modal Patient');field('Email','patient@example.test');overlay().querySelector('form').requestSubmit();await waitFor(()=>overlay().querySelector('[role="combobox"][aria-invalid="true"]'));if(heading('Payment'))throw new Error('Required custom select did not block checkout');await waitFor(()=>document.querySelector('.px-select-options'));Array.from(document.querySelectorAll('.px-select-option')).find(option=>option.textContent==='Email').click();await waitFor(()=>!document.querySelector('.px-select-options'));overlay().querySelector('form').requestSubmit();await waitFor(()=>heading('Payment'));
  click('Pay at location');await waitFor(()=>heading('Booking received'));
- if(lastPayload.service_id!==1 || lastPayload.location_id!==2 || lastPayload.staff_id!==1 || bookings!==1)throw new Error('Modal checkout changed selected service or location');
+ if(lastPayload.service_id!==1 || lastPayload.location_id!==2 || lastPayload.staff_id!==1 || lastPayload.custom_fields['1']!=='Email' || bookings!==1)throw new Error('Modal checkout changed selected service or location');
  if(location.href!==originalUrl)throw new Error('Modal changed page history');
  if(scenario==='coexist' && document.querySelector('#px-appointment-booking-app h3')?.textContent!=='Choose a service')throw new Error('Modal changed inline booking state');
  await close();first.click();await waitFor(()=>heading('Choose staff'));if(bookings!==1 || overlay().querySelector('input[placeholder="Full name"]'))throw new Error('Completed booking did not restart cleanly');await close();
@@ -53,6 +54,6 @@ window.addEventListener('load',async()=>{try{
  document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await waitFor(()=>!overlay());
  document.getElementById('service-missing').click();await waitFor(()=>overlay()?.querySelector('[role="alert"]')?.textContent.includes('no longer available'));await close();
  if(result.dataset.error)throw new Error(result.dataset.error);
- result.textContent='PASS service modal ('+scenario+'): staff-first service booking, related locations, full checkout, close/reopen, independent buttons and inline form, fixed service, retry and unavailable-service handling';
+ result.textContent='PASS service modal ('+scenario+'): staff-first service booking, related locations, full checkout, close/reopen, independent buttons and inline form, fixed service, retry, unavailable-service handling and required PxSelect validation';
 }catch(error){result.textContent='FAIL '+(result.dataset.error||error.message)}});
 </script><script src="../lib/public/public.js" defer></script></body></html>
