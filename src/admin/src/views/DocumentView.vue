@@ -112,6 +112,14 @@ onBeforeUnmount(() => {
       <p>Add the shortcode to any page or post:</p>
       <pre>[px-appointment]</pre>
       <p>Or insert the Gutenberg block named <strong>Appointment Pro</strong>.</p>
+      <p>For a button that opens a specific service in a booking modal, use:</p>
+      <pre>[px-appointment-service id="2" text="Book Annual Health Examination"]</pre>
+      <p>
+        The text attribute sets the button label; omit it to use the service name. The modal starts
+        at Staff (step 2), keeps the selected service fixed, and continues through the normal
+        booking steps. Multiple service buttons can share a page with the full form. Closing an
+        unfinished modal preserves progress; reopening after confirmation starts a new booking.
+      </p>
 
       <h3>2. Set up your catalog</h3>
       <ol>
