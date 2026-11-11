@@ -26,6 +26,9 @@
 .mt-3{
 	margin-top: 1.225rem;
 }
+.mb-3{
+	margin-bottom: 1.225rem;
+}
 .p-3{
 	padding: 1.225rem;
 }
@@ -156,8 +159,45 @@ button.px-button-outline.done:hover {
 	from { opacity: 0; transform: translateY(10px); }
 	to { opacity: 1; transform: translateY(0); }
 }
-.px-table-row {
+.px-table-row,.px-anim-fadein {
 	opacity: 0;
 	animation: tableRowFadeIn 0.15s ease forwards;
 	animation-delay: calc(var(--px-table-row-index) * 0.05s);
+}
+
+
+.px-fieldset{
+	background: var(--px-card);
+	border: 1px solid var(--px-line);
+	padding: 20px;
+	margin-bottom: 20px;
+	container-type: inline-size;
+
+	legend{
+		font-size: 14px;
+		font-weight: 600;
+		padding: 7px 10px;
+		color: #fff;
+		background: var(--px-primary);
+	}
+}
+
+.px-field-row{
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: column;
+	gap: 1.225rem;
+
+	> div{
+		flex: 1;
+		padding: 15px;
+		border: 1px solid var(--px-line);
+		border-radius: 4px;
+	}
+}
+
+@container (min-width: 600px){
+	.px-field-row{
+		flex-direction: row;
+	}
 }

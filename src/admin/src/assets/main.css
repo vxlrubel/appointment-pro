@@ -135,13 +135,6 @@ header.px-header {
 	border-color: #d60057;
 	color: #fff;
 }
-
-.px-form {
-	display: grid;
-	gap: 12px;
-	max-width: 900px;
-}
-
 .px-form h3 {
 	margin: 10px 0 0;
 	padding-top: 10px;
