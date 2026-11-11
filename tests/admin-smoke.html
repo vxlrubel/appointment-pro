@@ -1,5 +1,9 @@
 <!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/admin/main.css"></head><body><div id="appointment-pro"></div><pre id="test-result">RUNNING</pre><script>
 window.pxAppointmentAdmin={root:'/mock/',nonce:'test'};
+const settings={company_name:'Test Company',timezone:'UTC',currency:'USD',slot_length:15,local_enabled:true,stripe_enabled:true,paypal_enabled:true,stripe_sandbox:false,paypal_sandbox:false,stripe_secret:'live-stripe-secret',stripe_sandbox_secret:'sandbox-stripe-secret',paypal_secret:'live-paypal-secret',paypal_sandbox_secret:'sandbox-paypal-secret',notification_customer_email:'',notification_customer_admin_copy:false};
+let holidays=[];
+let templates=[{id:1,event:'booking_created_admin',subject:'Admin booking',body_html:'<p>Admin notification with a sufficiently long body.</p>',enabled:1},{id:2,event:'booking_created_staff',subject:'Staff booking',body_html:'<p>Staff notification with a sufficiently long body.</p>',enabled:1},{id:3,event:'booking_created_customer',subject:'Customer booking',body_html:'<p>Customer notification with a sufficiently long body.</p>',enabled:1}];
+
 window.confirm=()=>{throw new Error('Native confirmation must not be used')};
 const result=document.getElementById('test-result');let categories=[{id:1,name:'Test category',position:1}];let categoryDeletes=0,paymentDeletes=0,failPaymentDelete=false;let payments=[{id:101,type:'local',status:'completed',amount:50,currency:'USD',created_at:'2026-11-11 09:00:00'},{id:102,type:'stripe',status:'pending',amount:25,currency:'USD',created_at:'2026-11-11 10:00:00'}];
 window.addEventListener('error',e=>{result.dataset.error=e.message});
@@ -9,7 +13,12 @@ window.fetch=async function(url,options={}){
  if(!options.method || options.method==='GET') await new Promise(resolve=>setTimeout(resolve,180));
  if(window.failNextPath===path){window.failNextPath=null;return new Response(JSON.stringify({message:'Temporary connection problem'}),{status:503,headers:{'Content-Type':'application/json'}});}
  if(path==='dashboard')data={counts:{today:0,pending:0,approved:0,revenue:0},upcoming:[]};
- if(path==='settings')data={company_name:'Test Company',timezone:'UTC',currency:'USD',slot_length:15,local_enabled:true};
+ if(path==='settings'){if(options.method==='POST')Object.assign(settings,JSON.parse(options.body));data=settings;}
+ if(path==='admin/notifications')data=templates;
+ if(path.startsWith('admin/notifications/')){const id=Number(path.split('/').pop());const payload=JSON.parse(options.body);templates=templates.map(row=>row.id===id?{...row,...payload}:row);data=templates.find(row=>row.id===id);}
+ if(path==='admin/holidays'){if(options.method==='POST'){data={...JSON.parse(options.body),id:1};holidays.push(data)}else data=holidays;}
+ if(path.startsWith('admin/holidays/')){if(options.method==='DELETE'){holidays=[];data={ok:true}}else{data={...JSON.parse(options.body),id:1};holidays=[data]}}
+
  if(path==='admin/categories')data=categories;
  if(path==='admin/categories/bulk-delete'){categoryDeletes++;categories=[];data={ok:true};}
  if(path==='payments')data=payments;
@@ -26,6 +35,9 @@ const dialogButton=text=>Array.from(dialog().querySelectorAll('button')).find(bu
 const deleteButton=()=>Array.from(document.querySelectorAll('.px-toolbar button')).find(button=>button.textContent.includes('Delete selected'));
 async function openDelete(){deleteButton().focus();deleteButton().click();await waitFor(()=>dialog());await waitFor(()=>document.activeElement===dialogButton('No'));}
 async function waitClosed(){await waitFor(()=>!document.querySelector('.px-delete-overlay'));}
+function input(id,value){const element=document.getElementById(id);element.value=value;element.dispatchEvent(new Event('input',{bubbles:true}))}
+function choice(id,value){const element=document.getElementById(id);element.value=String(value);element.dispatchEvent(new Event('change',{bubbles:true}))}
+function button(text){return Array.from(document.querySelectorAll('.px-main-content button')).find(element=>element.textContent.trim()===text)}
 function nav(text){Array.from(document.querySelectorAll('a')).find(a=>a.textContent.trim()===text).click()}
 window.addEventListener('load',async()=>{try{
  await waitFor(()=>document.querySelector('.px-page-title')?.textContent==='Dashboard');
@@ -55,6 +67,39 @@ window.addEventListener('load',async()=>{try{
  Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Add').click();
  await waitFor(()=>document.querySelector('form'));
  nav('Settings');await waitFor(()=>document.querySelector('[aria-label="Loading settings"]'));await waitFor(()=>document.querySelector('input[type="password"]'));
+ input('stripe_secret','live-stripe-updated');choice('stripe-sandbox',true);await waitFor(()=>document.getElementById('stripe_sandbox_secret'));
+ if(document.getElementById('stripe_sandbox_secret').value!=='sandbox-stripe-secret')throw new Error('Stripe sandbox fields not separated');
+ input('stripe_sandbox_secret','sandbox-stripe-updated');choice('stripe-sandbox',false);await waitFor(()=>document.getElementById('stripe_secret'));
+ if(document.getElementById('stripe_secret').value!=='live-stripe-updated')throw new Error('Stripe live fields overwritten');
+ choice('paypal-sandbox',true);await waitFor(()=>document.getElementById('paypal_sandbox_secret'));input('paypal_sandbox_secret','sandbox-paypal-updated');
+ if(!document.getElementById('paypal_sandbox_webhook_id').closest('[aria-label="PayPal settings"]') || !document.getElementById('stripe_webhook_secret').closest('[aria-label="Stripe settings"]'))throw new Error('Webhook fields outside provider sections');
+ choice('paypal-sandbox',false);await waitFor(()=>document.getElementById('paypal_secret'));
+ if(document.getElementById('paypal_secret').value!=='live-paypal-secret')throw new Error('PayPal live fields overwritten');
+ document.querySelector('form').requestSubmit();await waitFor(()=>document.querySelector('.px-success'));
+ if(settings.stripe_sandbox_secret!=='sandbox-stripe-updated' || settings.paypal_sandbox_secret!=='sandbox-paypal-updated')throw new Error('Sandbox values not saved');
+ nav('Notifications');await waitFor(()=>document.querySelector('[aria-label="Loading notifications"]'));await waitFor(()=>document.querySelector('.px-notification-preview'));
+ if(document.querySelector('.px-notification-preview').textContent.length>30 || document.querySelector('.px-notification-preview').textContent.includes('<p>'))throw new Error('Notification preview is not plain truncated text');
+ document.getElementById('tab-staff').click();await waitFor(()=>document.querySelector('tbody').textContent.includes('booking_created_staff'));
+ document.getElementById('tab-customer').click();await waitFor(()=>document.getElementById('customer-custom-email'));
+ input('customer-custom-email','custom@example.test');choice('customer-admin-copy',true);button('Save email preferences').click();await waitFor(()=>settings.notification_customer_email==='custom@example.test');
+ if(!settings.notification_customer_admin_copy)throw new Error('Admin customer copy setting not saved');
+ await waitFor(()=>!button('Edit').disabled);button('Edit').click();await waitFor(()=>document.getElementById('notification-body'));
+ if(!document.getElementById('notification-body').value.includes('<p>Customer notification'))throw new Error('Editing does not show full notification HTML');
+ input('notification-body','<p>Updated full customer template.</p>');button('Save notification').click();await waitFor(()=>!document.getElementById('notification-body'));
+ nav('Holiday');await waitFor(()=>document.querySelector('[aria-label="Loading holidays"]'));await waitFor(()=>document.querySelector('.fc-dayGridMonth-view'));
+ const sidebar=Array.from(document.querySelectorAll('.px-sidebar a')).map(link=>link.textContent.trim());
+ if(sidebar.indexOf('Holiday')+1!==sidebar.indexOf('Settings'))throw new Error('Holiday menu not above Settings');
+ await new Promise(resolve=>setTimeout(resolve,400));
+ const day=document.querySelector('.fc-daygrid-day[data-date]');day.scrollIntoView();await new Promise(resolve=>setTimeout(resolve,100));const target=day.querySelector('.fc-daygrid-day-frame');const rect=target.getBoundingClientRect();const eventOptions={bubbles:true,button:0,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2};
+ const mouse=type=>{const event=new MouseEvent(type,eventOptions);Object.defineProperties(event,{pageX:{value:eventOptions.clientX+window.scrollX},pageY:{value:eventOptions.clientY+window.scrollY}});return event};
+ target.dispatchEvent(mouse('mousedown'));await new Promise(resolve=>setTimeout(resolve,30));document.dispatchEvent(mouse('mousemove'));document.dispatchEvent(mouse('mouseup'));
+ await waitFor(()=>document.getElementById('holiday-date'));
+ if(document.getElementById('holiday-date').value!==day.dataset.date)throw new Error('Calendar selection did not set holiday date');
+ input('holiday-name','Clinic holiday');input('holiday-description','Annual medical center closure');button('Save holiday').click();await waitFor(()=>holidays.length===1 && !document.getElementById('holiday-name'));
+ if(!Number(holidays[0].repeats_yearly))throw new Error('Yearly holiday default not enabled');
+ await waitFor(()=>button('Edit') && !button('Edit').disabled);button('Edit').click();await waitFor(()=>document.getElementById('holiday-name'));input('holiday-name','Updated clinic holiday');button('Save holiday').click();await waitFor(()=>holidays[0].name==='Updated clinic holiday' && !document.getElementById('holiday-name'));
+ await waitFor(()=>button('Delete') && !button('Delete').disabled);button('Delete').click();await waitFor(()=>dialog());dialogButton('Yes').click();await waitFor(()=>holidays.length===0 && document.querySelector('.px-table tbody')?.textContent.includes('No holidays yet'));
+
  nav('Database');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('Export CSV'));
  nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content[aria-busy="true"]'));
  const docs=document.querySelector('.px-docs-content');
@@ -87,6 +132,6 @@ window.addEventListener('load',async()=>{try{
  await waitFor(()=>document.querySelector('.px-error')?.textContent.includes('Temporary connection problem'));
  if(document.querySelector('.px-loading-skeleton'))throw new Error('Loading placeholder remained after request failure');
  if(result.dataset.error)throw new Error(result.dataset.error);
- result.textContent='PASS admin UI: delayed loading skeletons, disabled catalog controls, request error recovery, dashboard, bulk deletion, staff, settings, calendar, payments, appointments, database, documentation, teleported confirmations, cancellation and payment deletion';
+ result.textContent='PASS admin UI: delayed loading skeletons, disabled catalog controls, request error recovery, dashboard, bulk deletion, staff, settings, calendar, payments, appointments, database, documentation, teleported confirmations, sandbox/live credentials, notification tabs and holiday calendar';
 }catch(e){result.textContent='FAIL '+(result.dataset.error||e.message)+'; overlay='+document.querySelector('.px-delete-overlay')?.className+'; title='+dialog()?.querySelector('h2')?.textContent+'; overflow='+document.body.style.overflow}});
 </script><script type="module" src="../lib/admin/main.js"></script></body></html>
