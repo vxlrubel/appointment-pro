@@ -145,7 +145,7 @@ async function pick(service) {
           <b>{{ service.name }}</b>
           <div>
             {{ Math.round(service.duration_sec / 60) }} min &middot;
-            {{ store.config.currency }} {{ Number(service.price).toFixed(2) }}
+            <PxCurrency :amount="service.price" />
           </div>
           <small v-if="!service.location_ids?.length" class="pxb-muted"
             >Currently unavailable for booking</small
