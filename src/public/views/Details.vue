@@ -38,7 +38,8 @@ function next() {
           v-model="store.custom_fields[f.id]"
           :required="!!Number(f.required)"
         ></textarea>
-        <select
+        <PxSelect
+          :aria-label="f.label"
           v-else-if="f.type === 'select'"
           v-model="store.custom_fields[f.id]"
           :required="!!Number(f.required)"
@@ -50,7 +51,7 @@ function next() {
           >
             {{ option }}
           </option>
-        </select>
+        </PxSelect>
         <input
           v-else
           v-model="store.custom_fields[f.id]"
