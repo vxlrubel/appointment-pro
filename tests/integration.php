@@ -36,7 +36,25 @@ try {
  Settings::save(['timezone'=>'UTC','min_lead_hours'=>0,'max_lead_days'=>60,'local_enabled'=>true,'auto_approve'=>true]);
  $demo = Demo::insert();
  check(!is_wp_error($demo) && !empty($demo['appointments']), 'Demo seeds all booking tables');
- check(count(Transfer::tables()) === 17, 'All 17 reference tables supported');
+ foreach(['appointments'=>30,'services'=>30,'categories'=>5,'staff'=>5,'locations'=>5,'extras'=>2,'coupons'=>2,'custom_fields'=>3] as $key=>$count)check(($demo[$key]??0)===$count,'Medical demo count: '.$key);
+ check(count(R::all('services'))===30 && count(R::all('appointments'))===30,'Medical demo persists all requested records');
+ check(count(R::all('notifications'))===12,'Admin staff and customer event templates seeded');
+ $settings_before=Settings::get();
+ update_option('px_appointment_settings',['stripe_publishable'=>'pk_test_legacy','stripe_secret'=>'sk_test_legacy','stripe_webhook_secret'=>'whsec_legacy','paypal_sandbox'=>true,'paypal_client_id'=>'sandbox-legacy','paypal_secret'=>'sandbox-secret','paypal_webhook_id'=>'sandbox-webhook']);
+ Settings::seed();
+ check(Settings::gateway('stripe')['publishable']==='pk_test_legacy' && Settings::get('stripe_publishable')==='' && Settings::get('stripe_sandbox'),'Legacy Stripe test credentials migrate without becoming live keys');
+ check(Settings::gateway('paypal')['client_id']==='sandbox-legacy' && Settings::get('paypal_client_id')==='','Legacy PayPal sandbox credentials migrate without losing values');
+ update_option('px_appointment_settings',$settings_before);
+ Settings::save(['stripe_enabled'=>true,'paypal_enabled'=>true,'stripe_sandbox'=>true,'paypal_sandbox'=>true,'stripe_publishable'=>'pk_live_demo','stripe_secret'=>'sk_live_demo','stripe_webhook_secret'=>'whsec_live','stripe_sandbox_publishable'=>'pk_test_demo','stripe_sandbox_secret'=>'sk_test_demo','stripe_sandbox_webhook_secret'=>'whsec_test','paypal_client_id'=>'paypal-live','paypal_secret'=>'paypal-live-secret','paypal_webhook_id'=>'paypal-live-hook','paypal_sandbox_client_id'=>'paypal-test','paypal_sandbox_secret'=>'paypal-test-secret','paypal_sandbox_webhook_id'=>'paypal-test-hook']);
+ $public=Settings::public_subset();
+ check($public['stripe_publishable']==='pk_test_demo' && $public['paypal_client_id']==='paypal-test' && $public['stripe_sandbox'] && $public['paypal_sandbox'],'Public checkout uses sandbox credentials in sandbox mode');
+ check(!isset($public['stripe_secret']) && !isset($public['stripe_sandbox_secret']) && !isset($public['paypal_secret']),'Both environments keep secret credentials private');
+ Settings::save(['stripe_sandbox'=>false,'paypal_sandbox'=>false]);$public=Settings::public_subset();
+ check($public['stripe_publishable']==='pk_live_demo' && $public['paypal_client_id']==='paypal-live','Public checkout switches to live credentials');
+ check(Settings::get('stripe_sandbox_secret')==='sk_test_demo' && Settings::get('paypal_sandbox_secret')==='paypal-test-secret','Environment toggles preserve inactive credentials');
+ update_option('px_appointment_settings',$settings_before);
+
+ check(count(Transfer::tables()) === 18, 'All booking tables and holidays supported');
  $export = Transfer::export();
  check(!empty($export['csv']), 'CSV export includes data');
  $before = count(R::all('appointments'));
@@ -49,6 +67,7 @@ try {
  check(request('GET','admin/customers')->get_status() === 401, 'Guest cannot read customers');
  check(request('GET','settings')->get_status() === 401, 'Guest cannot read payment secrets');
  check(request('GET','appointments')->get_status() === 401, 'Guest cannot list appointments');
+ check(request('POST','admin/holidays',['name'=>'Closed'])->get_status()===401,'Guest cannot manage holidays');
  check(request('POST','payments/bulk-delete',['ids'=>[1]])->get_status()===401,'Guest cannot bulk delete payments');
  check(request('POST','admin/database/reset',[])->get_status() === 401, 'Guest cannot reset database');
  $config = request('GET','config')->get_data();
@@ -89,6 +108,23 @@ try {
  wp_set_current_user(0);
  $slots = rest_do_request($slot_request)->get_data();
  check(count($slots)>0, 'Guest availability returns slots');
+ wp_set_current_user($admin[0]->ID);
+ check(request('POST','admin/holidays',['name'=>'Invalid','description'=>'Missing valid date','holiday_date'=>'2026-02-30'])->get_status()===400,'Holiday requires a real calendar date');
+ check(request('POST','admin/holidays',['name'=>'Invalid','holiday_date'=>$date])->get_status()===400,'Holiday description is required');
+ $holiday=request('POST','admin/holidays',['name'=>'Annual clinic holiday','description'=>'All clinics are closed.','holiday_date'=>$date,'repeats_yearly'=>1,'enabled'=>1])->get_data();
+ check(!empty($holiday['id']) && !rest_do_request($slot_request)->get_data(),'Holiday removes public booking slots');
+ check(Praxleo\Appointment\Domain\Holidays::is_closed($day->modify('+1 year')->format('Y-m-d')),'Yearly holiday recurs next year');
+ check(Praxleo\Appointment\Domain\Availability::has_conflict($id,$date.' 09:00:00',$date.' 09:30:00'),'Admin creation and rescheduling also respect holidays');
+ request('PUT','admin/holidays/'.$holiday['id'],array_merge($holiday,['enabled'=>0]));
+ check(count(rest_do_request($slot_request)->get_data())>0,'Disabling a holiday restores availability');
+ request('PUT','admin/holidays/'.$holiday['id'],array_merge($holiday,['repeats_yearly'=>0]));
+ check(!Praxleo\Appointment\Domain\Holidays::is_closed($day->modify('+1 year')->format('Y-m-d')),'One-time holiday does not recur');
+ $holiday_export=Transfer::export();$holiday_import=Transfer::import($holiday_export['csv']);
+ check(!is_wp_error($holiday_import) && R::find('holidays',(int)$holiday['id'])['name']==='Annual clinic holiday','Holiday records survive CSV transfer');
+ request('DELETE','admin/holidays/'.$holiday['id']);
+ check(count(rest_do_request($slot_request)->get_data())>0,'Deleting holiday restores booking slots');
+ wp_set_current_user(0);
+
  $month_request = new WP_REST_Request('GET','/px-appointment/v1/availability/dates');
  $month_args = ['location_id'=>$location['id'],'service_id'=>$service['id'],'staff_id'=>$id,'month'=>substr($date,0,7)];
  $month_request->set_query_params($month_args);
@@ -150,7 +186,7 @@ try {
  $rendered = do_shortcode('[px-appointment location_id="12" service_id="34" staff_id="56"]');
  check(str_contains($rendered,'px-appointment-booking-app') && str_contains($rendered,'data-service-id="34"'), 'Shortcode renders booking presets');
  check(WP_Block_Type_Registry::get_instance()->is_registered('px-appointment/booking'), 'Booking block registered');
- Settings::save(['stripe_enabled'=>true,'stripe_secret'=>'sk_test_mock','stripe_webhook_secret'=>'whsec_mock','paypal_enabled'=>true,'paypal_client_id'=>'mock','paypal_secret'=>'mock','paypal_webhook_id'=>'mock']);
+ Settings::save(['stripe_enabled'=>true,'stripe_sandbox'=>false,'stripe_secret'=>'sk_test_mock','stripe_webhook_secret'=>'whsec_mock','paypal_enabled'=>true,'paypal_sandbox'=>false,'paypal_client_id'=>'mock','paypal_secret'=>'mock','paypal_webhook_id'=>'mock']);
  // Provider calls are mocked: no card is charged and no network request is made.
  $mock_id=0;
  $mock_http = function($pre,$args,$url) use (&$mock_id) {
@@ -187,6 +223,29 @@ try {
  check(Appointments::hydrate($mock_id)['payments'][0]['status']==='completed','PayPal completed capture records payment');
  remove_filter('pre_http_request',$mock_http,10);
  wp_set_current_user($admin[0]->ID);
+
+ R::update('staff',['email'=>'staff-notification@example.test'],['id'=>$id]);
+ $notification_booking=Appointments::hydrate($mock_id);
+ Settings::save(['company_email'=>'admin-notification@example.test','notification_customer_email'=>'custom-notification@example.test','notification_customer_admin_copy'=>true]);
+ $sent=[];$capture_mail=function($pre,$mail)use(&$sent){$sent[]=$mail;return true;};add_filter('pre_wp_mail',$capture_mail,20,2);
+ Praxleo\Appointment\Domain\Mailer::send_event('booking_created_customer',$notification_booking);
+ $recipients=array_map(fn($mail)=>is_array($mail['to'])?$mail['to'][0]:$mail['to'],$sent);
+ check(count($sent)===3 && in_array('custom-notification@example.test',$recipients,true) && in_array('admin-notification@example.test',$recipients,true),'Customer email delivers to customer custom recipient and optional admin');
+ $sent=[];Praxleo\Appointment\Domain\Mailer::send_event('booking_created_staff',$notification_booking);
+ check(count($sent)===1 && in_array('staff-notification@example.test',(array)$sent[0]['to'],true),'Staff event sends to assigned staff email');
+ Settings::save(['notification_customer_admin_copy'=>false]);$sent=[];Praxleo\Appointment\Domain\Mailer::send_event('booking_created_customer',$notification_booking);
+ check(count($sent)===2,'Disabling customer admin copy removes that recipient');
+ R::update('notifications',['enabled'=>0],['event'=>'booking_created_customer']);$sent=[];Praxleo\Appointment\Domain\Mailer::send_event('booking_created_customer',$notification_booking);
+ check(!$sent,'Disabled notification template sends no mail');
+ R::update('notifications',['enabled'=>1],['event'=>'booking_created_customer']);remove_filter('pre_wp_mail',$capture_mail,20);
+ $gateway_http=[];$gateway_mock=function($pre,$args,$url)use(&$gateway_http){$gateway_http[]=[$url,$args];if(str_contains($url,'api.stripe.com'))$body=['id'=>'pi_sandbox_test','client_secret'=>'sandbox_secret'];elseif(str_contains($url,'oauth2'))$body=['access_token'=>'sandbox-token'];else $body=['id'=>'SANDBOX_ORDER'];return ['headers'=>[],'body'=>wp_json_encode($body),'response'=>['code'=>200,'message'=>'OK'],'cookies'=>[]];};
+ add_filter('pre_http_request',$gateway_mock,10,3);
+ Settings::save(['stripe_sandbox'=>true,'paypal_sandbox'=>true,'stripe_sandbox_secret'=>'sk_test_sandbox','stripe_sandbox_webhook_secret'=>'sandbox-webhook-secret','paypal_sandbox_client_id'=>'sandbox-client','paypal_sandbox_secret'=>'sandbox-secret']);
+ Payments::stripe_intent($notification_booking,$notification_booking['amount']);
+ check($gateway_http[0][1]['headers']['Authorization']==='Bearer sk_test_sandbox','Stripe API uses sandbox secret when sandbox is enabled');
+ $gateway_http=[];Payments::paypal_order($notification_booking,$notification_booking['amount']);
+ check(str_contains($gateway_http[0][0],'sandbox.paypal.com') && $gateway_http[0][1]['headers']['Authorization']==='Basic '.base64_encode('sandbox-client:sandbox-secret'),'PayPal API uses sandbox host and sandbox credentials');
+ remove_filter('pre_http_request',$gateway_mock,10);
  check(request('POST','admin/staff/bulk-delete',['ids'=>[$id]])->get_status()===200 && !R::find('staff',$id), 'Admin bulk deletion works');
  $payment_before=count(R::all('payments'));
  $deny_admin=function($capabilities){$capabilities['manage_options']=false;return $capabilities;};
