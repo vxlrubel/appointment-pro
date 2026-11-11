@@ -349,3 +349,11 @@
   font-size: 11px;
   font-weight: 600;
 }
+
+/* Service shortcode buttons and the booking wizard reuse the public palette. */
+.pxb-service-booking-button { cursor: pointer; font: inherit; }
+.pxb-service-modal-content { font-family: Inter, system-ui, sans-serif; color: #1e1e1e; }
+.pxb-service-modal-content .px-appointment-booking { max-width: none; padding: 0; }
+.pxb-service-modal-content > .pxb-bar { justify-content: flex-end; }
+.pxb-service-location { display: grid; gap: 6px; margin-bottom: 16px; font-size: 14px; }
+.pxb-service-location select { padding: 10px; border: 1px solid #dee2e6; border-radius: 6px; font: inherit; background: white; color: inherit; }
