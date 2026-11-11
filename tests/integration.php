@@ -49,6 +49,7 @@ try {
  check(request('GET','admin/customers')->get_status() === 401, 'Guest cannot read customers');
  check(request('GET','settings')->get_status() === 401, 'Guest cannot read payment secrets');
  check(request('GET','appointments')->get_status() === 401, 'Guest cannot list appointments');
+ check(request('POST','payments/bulk-delete',['ids'=>[1]])->get_status()===401,'Guest cannot bulk delete payments');
  check(request('POST','admin/database/reset',[])->get_status() === 401, 'Guest cannot reset database');
  $config = request('GET','config')->get_data();
  check(!isset($config['stripe_secret']) && !isset($config['paypal_secret']), 'Public config excludes secrets');
@@ -187,6 +188,20 @@ try {
  remove_filter('pre_http_request',$mock_http,10);
  wp_set_current_user($admin[0]->ID);
  check(request('POST','admin/staff/bulk-delete',['ids'=>[$id]])->get_status()===200 && !R::find('staff',$id), 'Admin bulk deletion works');
+ $payment_before=count(R::all('payments'));
+ $deny_admin=function($capabilities){$capabilities['manage_options']=false;return $capabilities;};
+ add_filter('user_has_cap',$deny_admin);
+ check(request('POST','payments/bulk-delete',['ids'=>[1]])->get_status()===403,'User without admin capability cannot delete payments');
+ remove_filter('user_has_cap',$deny_admin);
+ foreach([[],['ids'=>[]],['ids'=>'all'],['ids'=>[-1]],['ids'=>[true]],['ids'=>['1 OR 1=1']]] as $invalid)check(request('POST','payments/bulk-delete',$invalid)->get_status()===400,'Payment bulk deletion rejects invalid selection');
+ check(count(R::all('payments'))===$payment_before,'Invalid payment selections preserve all records');
+ $stripe_payment=$settled['payments'][0]['id'];$paypal_payment=Appointments::hydrate($mock_id)['payments'][0]['id'];
+ $stripe_appointment=Appointments::hydrate($settled['appointment']['id'])['appointment'];$paypal_appointment=Appointments::hydrate($mock_id)['appointment'];
+ $deleted=request('POST','payments/bulk-delete',['ids'=>[$stripe_payment,$paypal_payment,$stripe_payment]])->get_data();
+ check(($deleted['deleted'] ?? 0)===2 && count(R::all('payments'))===$payment_before-2,'Payment bulk deletion removes only distinct selected records');
+ check(!R::find('payments',(int)$stripe_payment) && !R::find('payments',(int)$paypal_payment),'Selected payment records removed');
+ check(Appointments::hydrate($settled['appointment']['id'])['appointment']===$stripe_appointment && Appointments::hydrate($mock_id)['appointment']===$paypal_appointment,'Payment deletion preserves associated appointments');
+ check(request('POST','payments/bulk-delete',['ids'=>[$stripe_payment]])->get_data()['deleted']===0,'Repeating payment deletion safely reports zero deleted');
  $templates=count(R::all('notifications'));
  Demo::reset();
  check(!R::all('appointments') && count(R::all('notifications'))===$templates,'Database reset preserves notification templates');
