@@ -1,4 +1,5 @@
 <script setup>
+import PxModal from './PxModal.vue'
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
 import DeleteConfirmation from './DeleteConfirmation.vue'
@@ -47,6 +48,18 @@ const lookups = ref({})
 const error = ref('')
 const saving = ref(false)
 
+const recordName = computed(
+  () =>
+    ({
+      services: 'service',
+      categories: 'category',
+      locations: 'location',
+      customers: 'customer',
+      extras: 'extra',
+      coupons: 'coupon',
+      'custom-fields': 'custom field',
+    })[props.path] || 'record',
+)
 const visibleFields = computed(() => props.fields.filter((field) => !field.hideInForm))
 
 async function loadLookups() {
@@ -183,8 +196,15 @@ onMounted(async () => {
 
   <p v-if="error" class="px-error">{{ error }}</p>
 
-  <div v-if="editing" class="px-card">
-    <form class="px-form" @submit.prevent="save">
+  <PxModal
+    :open="!!editing"
+    :heading="(editing === 'new' ? 'Create ' : 'Edit ') + recordName"
+    :busy="saving"
+    form-id="crud-form"
+    primary-text="Save changes"
+    @close="editing = null"
+    ><p v-if="error" class="px-error" role="alert">{{ error }}</p>
+    <form id="crud-form" class="px-form" @submit.prevent="save">
       <div class="px-form-row">
         <div v-for="field in visibleFields" :key="field.key" class="px-field">
           <label>{{ field.label }}</label>
@@ -206,17 +226,8 @@ onMounted(async () => {
           <input v-else v-model="form[field.key]" :type="field.type || 'text'" :step="field.step" />
         </div>
       </div>
-
-      <div class="px-actions">
-        <button class="px-button" type="submit" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save' }}
-        </button>
-        <button class="px-button px-button-ghost" type="button" @click="editing = null">
-          Cancel
-        </button>
-      </div>
     </form>
-  </div>
+  </PxModal>
 
   <LoadingSkeleton
     v-if="loading"
@@ -259,6 +270,16 @@ onMounted(async () => {
             <template v-if="field.type === 'select'">
               {{ optionLabel(field, row[field.key]) }}
             </template>
+            <PxCurrency
+              v-else-if="
+                ['price', 'min_amount'].includes(field.key) ||
+                (field.key === 'discount_amount' && row.discount_type === 'fixed')
+              "
+              :amount="row[field.key]"
+            />
+            <template v-else-if="field.key === 'discount_amount' && row.discount_type === 'percent'"
+              >{{ Number(row[field.key]).toFixed(2) }}%</template
+            >
             <template v-else>{{ row[field.key] }}</template>
           </td>
           <td>
