@@ -31,7 +31,7 @@ class Transfer {
 			'customer_appointments',
 			'payments',
 			'notifications',
-			'holidays',
+			'holidays', 'business_hours', 'affiliates',
 		);
 	}
 
