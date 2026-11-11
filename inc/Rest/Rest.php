@@ -47,6 +47,15 @@ class Rest {
 		$this->crud( 'custom-fields', 'custom_fields', $adm );
 		$this->crud( 'notifications', 'notifications', $adm, false );
 
+		register_rest_route( self::NS, '/admin/holidays', array(
+			array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => static fn() => rest_ensure_response( Repository::all( 'holidays', array(), 'holiday_date ASC, id ASC' ) ) ),
+			array( 'methods' => 'POST', 'permission_callback' => $adm, 'callback' => static function( $req ) { $result = \Praxleo\Appointment\Domain\Holidays::save( (array) $req->get_json_params() ); return is_wp_error( $result ) ? $result : rest_ensure_response( $result ); } ),
+		) );
+		register_rest_route( self::NS, '/admin/holidays/(?P<id>\d+)', array(
+			array( 'methods' => 'PUT', 'permission_callback' => $adm, 'callback' => static function( $req ) { $result = \Praxleo\Appointment\Domain\Holidays::save( (array) $req->get_json_params(), (int) $req['id'] ); return is_wp_error( $result ) ? $result : rest_ensure_response( $result ); } ),
+			array( 'methods' => 'DELETE', 'permission_callback' => $adm, 'callback' => static function( $req ) { $result = \Praxleo\Appointment\Domain\Holidays::delete( (int) $req['id'] ); return false === $result ? new WP_Error( 'delete_failed', 'Could not delete holiday.', array( 'status' => 500 ) ) : rest_ensure_response( array( 'ok' => true ) ); } ),
+		) );
+
 		register_rest_route( self::NS, '/locations', array(
 			'methods' => 'GET', 'callback' => array( $this, 'public_locations' ), 'permission_callback' => $pub,
 		) );
