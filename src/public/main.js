@@ -1,3 +1,4 @@
+import PxSelect from "../shared/PxSelect.vue";
 import PxCurrency from "../shared/PxCurrency.vue";
 import { createApp, reactive, watch } from "vue";
 import { createPinia } from "pinia";
@@ -30,10 +31,13 @@ const routes = [
   { path: "/done", name: "done", component: Done },
 ];
 
+let bookingInstance = 0;
 function bookingApp(component, history, props = {}) {
   const router = createRouter({ history, routes });
   const app = createApp(component, props);
+  app.config.idPrefix = "px-booking-" + bookingInstance++;
   const pinia = createPinia();
+  app.component("PxSelect", PxSelect);
   app.component("PxCurrency", PxCurrency);
   app.use(pinia);
   const store = useBooking(pinia);
