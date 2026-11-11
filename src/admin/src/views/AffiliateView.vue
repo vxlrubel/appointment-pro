@@ -154,10 +154,10 @@ onMounted(load)
       </div>
       <div class="px-field">
         <label for="affiliate-enabled">Tracking</label
-        ><select id="affiliate-enabled" v-model.number="form.enabled">
+        ><PxSelect id="affiliate-enabled" v-model.number="form.enabled">
           <option :value="1">Enabled</option>
           <option :value="0">Disabled</option>
-        </select>
+        </PxSelect>
       </div>
     </form></PxModal
   >
