@@ -41,14 +41,15 @@ Node.js and npm are build-time dependencies. A deployed WordPress site loads the
 - Bookable services remain selectable when both filters are set to **All**. Selecting a service chooses its category and preserves a compatible location or selects its first assigned location in the configured order.
 - Staff selection, including any available staff member; location selection has no separate booking step.
 - Always-visible calendar on the date-and-time step. Dates without slots are disabled, and month navigation follows booking limits.
-- Availability based on working hours, breaks, days off, existing appointments, service duration, padding, and extras.
+- Availability based on working hours, breaks, days off, existing appointments, service duration, padding, extras, and clinic holidays.
 - Customer details, optional WordPress account creation, custom fields, coupons, and service extras.
-- Local payments, Stripe card confirmation, PayPal checkout, and WooCommerce order integration.
+- Local payments, Stripe card confirmation, PayPal checkout, and WooCommerce order integration. Stripe and PayPal store separate sandbox/live credentials and webhook settings.
 - Dashboard statistics, weekly admin calendar, appointment statuses, customer records, and payment history.
 - Management of locations, categories, services, staff, assignments, extras, coupons, and notification templates, including supported bulk deletion actions.
-- Booking/cancellation emails and scheduled reminders with configurable templates.
+- Admin, Staff, and Customer notification tabs with configurable booking, approval, cancellation, and reminder templates, optional customer-email copies, and plain-text table previews.
+- FullCalendar month calendar for named clinic holidays, optional yearly recurrence, and automatic closure of public booking dates.
 - Loading skeletons in admin and public interfaces, with reduced-motion support.
-- Demo content, database reset, and CSV export/import. Reset preserves notification templates.
+- Medical demo content: 30 appointments, 30 services, 5 categories, 5 staff, 5 locations, 2 extras, 2 coupons, and 3 custom fields. Database reset and CSV export/import. Reset preserves notification templates.
 - Shortcode and block embedding with optional presets; opt-in data removal on uninstall.
 
 See [FEATURE-PARITY.md](FEATURE-PARITY.md) for the detailed reference feature comparison.
@@ -248,8 +249,8 @@ Location and category selectors appear only at the top of the service catalog an
 | Method | Setup |
 | --- | --- |
 | Local | Enable local payments in Settings; no online provider is required |
-| Stripe | Enable Stripe and save publishable/secret keys plus the webhook signing secret |
-| PayPal | Enable PayPal and save client ID, secret, webhook ID, and sandbox/live preference |
+| Stripe | Enable Stripe, choose sandbox/live, and save the selected environment?s publishable key, secret key, and webhook signing secret |
+| PayPal | Enable PayPal, choose sandbox/live, and save the selected environment?s client ID, secret, and webhook ID |
 | WooCommerce | Install and activate WooCommerce, configure its checkout, and enable the integration |
 
 Configure provider webhook URLs using your site's domain:
@@ -261,11 +262,23 @@ https://your-site.example/wp-json/px-appointment/v1/webhooks/paypal
 
 Subscribe Stripe to `payment_intent.succeeded` and `payment_intent.payment_failed`, and PayPal to `PAYMENT.CAPTURE.COMPLETED`. Use matching sandbox/test or live credentials. Public payment requests use booking tokens, and payment totals come from the stored booking.
 
-Notification templates support booking, approval, cancellation, and reminder events. Delivery uses WordPress mail. Reminders and expired hold cleanup run through the hourly WordPress cron hook `px_appointment_hourly`; ensure WordPress cron is running on the site.
+Both providers show only the credentials for the selected environment. Switching environments preserves the other profile; save Settings to activate the selection. Existing sandbox credentials are migrated to sandbox fields automatically. Public checkout uses only the active profile and displays a Sandbox badge in test mode. Configure and verify each environment?s webhook separately before taking bookings.
+
+The **Notifications** screen separates **Admin**, **Staff**, and **Customer** templates. Each audience supports booking creation, approval, cancellation, and reminders. The body column shows up to 30 plain-text characters; editing opens the complete HTML template. Staff notifications go to the assigned staff member?s email. Admin notifications use the company email configured in Settings.
+
+Under **Customer**, an optional custom email receives an additional copy of customer notifications. Enable **Send a copy to the admin email** to send those customer templates to the configured company email as well. Each recipient receives a separate message. Customer delivery remains enabled according to each template?s own Enabled setting.
+
+Delivery uses WordPress mail. Reminders and expired hold cleanup run through the hourly WordPress cron hook `px_appointment_hourly`; ensure WordPress cron is running on the site.
+
+### Clinic holidays
+
+Open **Holiday**, immediately above Settings. The FullCalendar month view opens by default. Click a date (or **Add holiday**), then enter a name, description, and date. **Repeat yearly** and **Block bookings** are enabled by default. Turn off yearly recurrence for a one-time closure, or disable blocking to retain a holiday record without closing the date.
+
+Saved holidays apply to every location in the company timezone. Customers cannot select these dates, and the server also rejects new bookings or reschedules that overlap a closure. Existing appointments are retained. Click a calendar event or **Edit** in the holiday table to change it; **Delete** uses the shared confirmation popup. Holidays are included in CSV transfers and removed by database reset/demo replacement.
 
 ### Database tools and uninstall
 
-The **Database** screen provides CSV export/import, demo insertion, and reset. Import replaces tables present in the uploaded export; demo insertion replaces current booking content. Export a backup before using these replacement operations. Reset keeps notification templates.
+The **Database** screen provides CSV export/import, demo insertion, and reset. Import replaces tables present in the uploaded export; demo insertion replaces current booking content. Export a backup before using these replacement operations. Reset keeps notification templates. Demo insertion creates 30 appointments, 30 medical services, 5 medical categories, 5 doctors, 5 locations, 2 extras, 2 coupons, and 3 custom fields. It does not send notifications or create WordPress user accounts.
 
 Deactivation stops the scheduled maintenance event. Uninstall retains booking data by default; enable **Delete data on uninstall** in Settings only when you want the plugin's tables and primary options removed.
 
@@ -298,6 +311,10 @@ Live payments, actual email delivery, and WooCommerce checkout also need verific
 | Public changes do not appear | Rebuild/watch the public application, refresh the booking page, and clear any page/CDN cache |
 | Admin tries to load an unavailable dev server | Stop the forced dev override or set `PX_APPOINTMENT_VITE_DEV` to `false`, then refresh |
 | Services cannot be booked | Check enabled services, locations, staff, and service/location assignments |
-| Calendar has no enabled dates | Check staff hours, breaks/days off, existing appointments, timezone, notice limits, booking horizon, and extra duration |
+| Calendar has no enabled dates | Check staff hours, breaks/days off, existing appointments, timezone, notice limits, booking horizon, clinic holidays, and extra duration |
 | Online payment does not confirm | Check enabled methods, matching provider credentials, webhook URLs/secrets, and provider logs |
 | Reminders or emails do not arrive | Check notification settings, WordPress mail delivery, and WordPress cron |
+
+## Third-party notices
+
+The Holiday calendar uses the MIT-licensed FullCalendar packages. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for their license notices, included in production ZIPs.
