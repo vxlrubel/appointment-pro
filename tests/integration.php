@@ -54,7 +54,7 @@ try {
  check(Settings::get('stripe_sandbox_secret')==='sk_test_demo' && Settings::get('paypal_sandbox_secret')==='paypal-test-secret','Environment toggles preserve inactive credentials');
  update_option('px_appointment_settings',$settings_before);
 
- check(count(Transfer::tables()) === 18, 'All booking tables and holidays supported');
+ check(count(Transfer::tables()) === 20, 'All booking tables and holidays supported');
  $export = Transfer::export();
  check(!empty($export['csv']), 'CSV export includes data');
  $before = count(R::all('appointments'));
@@ -66,6 +66,9 @@ try {
  wp_set_current_user(0);
  check(request('GET','admin/customers')->get_status() === 401, 'Guest cannot read customers');
  check(request('GET','settings')->get_status() === 401, 'Guest cannot read payment secrets');
+ check(request('GET','admin/business-hours')->get_status() === 401, 'Guest cannot manage business hours');
+ check(request('GET','admin/affiliates')->get_status() === 401, 'Guest cannot list affiliate links');
+ check(request('GET','admin/affiliates/1/bookings')->get_status() === 401, 'Guest cannot read affiliate bookings');
  check(request('GET','appointments')->get_status() === 401, 'Guest cannot list appointments');
  check(request('POST','admin/holidays',['name'=>'Closed'])->get_status()===401,'Guest cannot manage holidays');
  check(request('POST','payments/bulk-delete',['ids'=>[1]])->get_status()===401,'Guest cannot bulk delete payments');
@@ -109,6 +112,25 @@ try {
  $slots = rest_do_request($slot_request)->get_data();
  check(count($slots)>0, 'Guest availability returns slots');
  wp_set_current_user($admin[0]->ID);
+ $original_schedule=R::all('staff_schedule',['staff_id'=>$id]);
+ $business=[['weekday'=>(int)(new DateTimeImmutable($date))->format('w'),'location_id'=>null,'start_time'=>'09:00','end_time'=>'17:00','breaks'=>[['start_time'=>'12:00','end_time'=>'13:00']]]];
+ check(request('POST','admin/business-hours',$business)->get_status()===200,'Admin saves default business shifts and breaks');
+ check(request('POST','admin/business-hours',[array_merge($business[0],['end_time'=>'08:00'])])->get_status()===400,'Business hours reject reversed shifts');
+ check(count(R::all('business_hours'))===1,'Invalid business hours preserve saved schedule');
+ R::delete('staff_schedule',['staff_id'=>$id]);
+ $business_slots=rest_do_request($slot_request)->get_data();
+ check(count($business_slots)>0,'Staff without weekly hours inherit business hours');
+ check(!array_filter($business_slots,fn($slot)=>substr($slot['start'],11,2)==='12'),'Business breaks remove public booking slots');
+ R::insert('staff_schedule',['staff_id'=>$id,'weekday'=>((int)(new DateTimeImmutable($date))->format('w')+1)%7,'start_time'=>'09:00','end_time'=>'17:00','location_id'=>null]);
+ check(!rest_do_request($slot_request)->get_data(),'A personal schedule overrides the entire default week');
+ R::delete('staff_schedule',['staff_id'=>$id]);foreach($original_schedule as $shift)R::insert('staff_schedule',$shift);
+ $affiliate=request('POST','admin/affiliates',['name'=>'Medical referral','booking_url'=>home_url('/booking/?source=clinic#service'),'enabled'=>1])->get_data();
+ check(!empty($affiliate['id']) && strlen($affiliate['code'])===32,'Affiliate links receive unique opaque referral codes');
+ check(request('POST','admin/affiliates',['name'=>'Invalid','booking_url'=>'https://other-site.invalid/booking/','enabled'=>1])->get_status()===400,'Affiliate URLs must point to this site');
+ $affiliate_list=request('GET','admin/affiliates')->get_data();
+ check(str_contains($affiliate_list[0]['link'],'px_aff='.$affiliate['code']) && str_contains($affiliate_list[0]['link'],'source=clinic'),'Affiliate URL preserves booking page parameters');
+ check(Praxleo\Appointment\Domain\Currency::format(12.5,'BDT')==='৳ 12.50' && Praxleo\Appointment\Domain\Currency::format(0,'USD')==='$ 0.00','Currency formatting prefixes symbols and always uses two decimals');
+
  check(request('POST','admin/holidays',['name'=>'Invalid','description'=>'Missing valid date','holiday_date'=>'2026-02-30'])->get_status()===400,'Holiday requires a real calendar date');
  check(request('POST','admin/holidays',['name'=>'Invalid','holiday_date'=>$date])->get_status()===400,'Holiday description is required');
  $holiday=request('POST','admin/holidays',['name'=>'Annual clinic holiday','description'=>'All clinics are closed.','holiday_date'=>$date,'repeats_yearly'=>1,'enabled'=>1])->get_data();
@@ -147,7 +169,7 @@ try {
  Settings::save(['max_lead_days'=>60]);
 
  check(!array_filter($slots, fn($s)=>substr($s['start'],11,2)==='12'), 'Breaks block availability');
- $payload = ['location_id'=>$location['id'],'service_id'=>$service['id'],'staff_id'=>$id,'start'=>$slots[0]['start'],'customer'=>['full_name'=>'Test Customer','email'=>'booking-integration@example.test'],'payment_method'=>'local','idempotency_key'=>bin2hex(random_bytes(16))];
+ $payload = ['location_id'=>$location['id'],'service_id'=>$service['id'],'staff_id'=>$id,'start'=>$slots[0]['start'],'customer'=>['full_name'=>'Test Customer','email'=>'booking-integration@example.test'],'payment_method'=>'local','affiliate_code'=>$affiliate['code'],'idempotency_key'=>bin2hex(random_bytes(16))];
  check(request('POST','appointments',$payload)->get_status()===400, 'Required custom fields enforced');
  $payload['custom_fields'] = [];
  foreach(R::all('custom_fields',['enabled'=>1]) as $field) { $options=json_decode($field['options_json'] ?: '[]',true); $payload['custom_fields'][$field['id']] = $field['type']==='select' ? ($options[0] ?? 'Test') : 'Test'; }
@@ -162,6 +184,7 @@ try {
 
  $repeat = request('POST','appointments',$payload)->get_data();
  check($repeat['appointment']['id']===$booking['appointment']['id'] && count($repeat['payments'])===1, 'Booking retry is idempotent');
+ check(count(R::all('appointments',['affiliate_id'=>$affiliate['id']]))===1,'Booking retries retain a single affiliate attribution');
  $token = $booking['customer_appointment']['token'];
  check(request('GET','appointments/'.$token)->get_status()===200, 'Booking token lookup works');
  check(request('POST','payments/local',['appointment_id'=>$booking['appointment']['id'],'amount'=>0])->get_status()===403, 'Payment endpoint requires booking token');
@@ -254,6 +277,17 @@ try {
  remove_filter('user_has_cap',$deny_admin);
  foreach([[],['ids'=>[]],['ids'=>'all'],['ids'=>[-1]],['ids'=>[true]],['ids'=>['1 OR 1=1']]] as $invalid)check(request('POST','payments/bulk-delete',$invalid)->get_status()===400,'Payment bulk deletion rejects invalid selection');
  check(count(R::all('payments'))===$payment_before,'Invalid payment selections preserve all records');
+ $referrals=request('GET','admin/affiliates/'.$affiliate['id'].'/bookings')->get_data();
+ check(count($referrals)>=1 && (int)$referrals[0]['appointment']['affiliate_id']===(int)$affiliate['id'],'Booking referral code persists one attributed appointment across retries');
+ $tracked_appointment=(int)$referrals[0]['appointment']['id'];
+ $affiliate_list=request('GET','admin/affiliates')->get_data();check((int)$affiliate_list[0]['booking_count']===count($referrals),'Affiliate booking count matches its expanded appointment list');
+ request('PUT','admin/affiliates/'.$affiliate['id'],array_merge($affiliate,['enabled'=>0]));
+ check(Praxleo\Appointment\Domain\Affiliates::resolve($affiliate['code'])===null,'Disabled affiliate links stop new attribution');
+ $roundtrip=Transfer::import(Transfer::export()['csv']);
+ check(!is_wp_error($roundtrip) && (int)R::find('appointments',$tracked_appointment)['affiliate_id']===(int)$affiliate['id'] && count(R::all('business_hours'))===1,'CSV transfers retain business hours and affiliate attribution');
+ check(request('POST','admin/affiliates/bulk-delete',['ids'=>['1 OR 1=1']])->get_status()===400,'Affiliate deletion rejects invalid IDs');
+ check(request('DELETE','admin/affiliates/'.$affiliate['id'])->get_status()===200 && R::find('appointments',$tracked_appointment) && R::find('appointments',$tracked_appointment)['affiliate_id']===null,'Deleting affiliate links preserves appointments and removes attribution');
+
  $stripe_payment=$settled['payments'][0]['id'];$paypal_payment=Appointments::hydrate($mock_id)['payments'][0]['id'];
  $stripe_appointment=Appointments::hydrate($settled['appointment']['id'])['appointment'];$paypal_appointment=Appointments::hydrate($mock_id)['appointment'];
  $deleted=request('POST','payments/bulk-delete',['ids'=>[$stripe_payment,$paypal_payment,$stripe_payment]])->get_data();
