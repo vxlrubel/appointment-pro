@@ -28,6 +28,7 @@ $tables = array(
 	'px_appointment_payments',
 	'px_appointment_custom_fields',
 	'px_appointment_notifications',
+	'px_appointment_holidays',
 );
 foreach ( $tables as $table ) {
 	$wpdb->query( 'DROP TABLE IF EXISTS ' . $wpdb->prefix . $table );
