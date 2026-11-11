@@ -20,7 +20,7 @@ The bundled `praxleo-booking` folder is the reference. Its plugin files remain u
 | Local payment, Stripe, PayPal, WooCommerce | Provider handlers and WooCommerce hooks added; Stripe card confirmation and PayPal buttons implemented |
 | Email templates, placeholders, booking/cancellation mail, reminders | Existing mailer and hourly maintenance retained; cancellation links connected |
 | Dashboard and payment history | Existing admin screens retained |
-| Demo data, reset, CSV export/import | Database screen; all 17 reference tables plus clinic holidays supported; reset retains templates |
+| Demo data, reset, CSV export/import | Database screen; all 20 booking tables, including holidays, business hours, and affiliates, supported; reset retains templates |
 | Documentation | Documentation screen with current shortcode and webhook paths |
 | Optional uninstall cleanup | Data retained unless deletion is enabled in Settings |
 
@@ -58,3 +58,7 @@ Bookable service cards remain enabled with both filters set to All. Selecting a 
 - Holiday: FullCalendar month view with required name, description, and date, yearly recurrence, edit/delete, and booking availability enforcement in the company timezone.
 - Notifications: Admin, Staff, and Customer tabs; four event types per audience; additional customer email and optional admin copies; plain-text previews limited to 30 characters with complete HTML editing.
 - Medical demo: 30 appointments, 30 services, 5 categories, 5 staff, 5 locations, 2 extras, 2 coupons, and 3 custom fields.
+
+- Business Hours: default weekly shifts and breaks for staff without personal hours, optional locations, and complete personal-week overrides.
+- Affiliate Programs: unique booking page links, persisted appointment attribution, expandable booking details, enable/disable controls, and deletion that preserves bookings.
+- Shared administration form modals and shared symbol-first currency formatting with two decimals across admin, booking, and email amounts.
