@@ -53,6 +53,13 @@ class Mailer {
 			),
 		);
 
+		foreach ( array( 'staff', 'admin' ) as $audience ) {
+			foreach ( array( 'booking_created' => 'New appointment', 'booking_approved' => 'Appointment approved', 'booking_cancelled' => 'Appointment cancelled', 'reminder' => 'Appointment reminder' ) as $event => $subject ) {
+				$key = $event . '_' . $audience;
+				if ( ! isset( $defaults[ $key ] ) ) { $defaults[ $key ] = array( $subject, '<p>{customer_name}: {service} with {staff} at {location} on {date} at {time}.</p>' ); }
+			}
+		}
+
 		foreach ( $defaults as $event => $pair ) {
 			$existing = Repository::all( 'notifications', array( 'event' => $event ) );
 
@@ -91,9 +98,9 @@ class Mailer {
 			$replace  = self::placeholders( $hydrated );
 			$subject  = strtr( $template['subject'], $replace );
 			$body     = strtr( $template['body_html'], $replace );
-			$to       = self::recipient( $event, $hydrated );
+			$recipients = self::recipients( $event, $hydrated );
 
-			if ( ! $to || ! is_email( $to ) ) {
+			if ( ! $recipients ) {
 				return;
 			}
 
@@ -110,7 +117,8 @@ class Mailer {
 				$headers[] = 'From: ' . $from_name . ' <' . $from_email . '>';
 			}
 
-			$sent = wp_mail( $to, $subject, $body, $headers );
+			$sent = true;
+			foreach ( $recipients as $to ) { $sent = wp_mail( $to, $subject, $body, $headers ) && $sent; }
 
 			if ( ! $sent ) {
 				update_option( 'px_appointment_mail_error', gmdate( 'c' ) . ' failed ' . $event );
@@ -121,18 +129,24 @@ class Mailer {
 	}
 
 	/**
-	 * Determine the recipient for an event.
+	 * Determine the recipients for an event.
 	 *
 	 * @param string               $event Event key.
 	 * @param array<string, mixed> $hydrated Hydrated appointment.
-	 * @return string
+	 * @return string[]
 	 */
-	private static function recipient( string $event, array $hydrated ): string {
-		if ( false !== strpos( $event, 'admin' ) ) {
-			return (string) Settings::get( 'company_email' );
+	private static function recipients( string $event, array $hydrated ): array {
+		if ( str_ends_with( $event, '_admin' ) ) { $emails = array( Settings::get( 'company_email' ) ); }
+		elseif ( str_ends_with( $event, '_staff' ) ) { $emails = array( $hydrated['staff']['email'] ?? '' ); }
+		else {
+			$emails = array( $hydrated['customer']['email'] ?? '', Settings::get( 'notification_customer_email', '' ) );
+			if ( Settings::get( 'notification_customer_admin_copy', false ) ) { $emails[] = Settings::get( 'company_email' ); }
 		}
+		return array_values( array_unique( array_filter( array_map( 'sanitize_email', $emails ), 'is_email' ) ) );
+	}
 
-		return (string) ( $hydrated['customer']['email'] ?? '' );
+	public static function send_group( string $event, array $hydrated ): void {
+		foreach ( array( 'customer', 'staff', 'admin' ) as $audience ) { self::send_event( $event . '_' . $audience, $hydrated ); }
 	}
 
 	/**
@@ -221,7 +235,7 @@ class Mailer {
 				continue;
 			}
 
-			self::send_event( 'reminder_customer', $hydrated );
+			self::send_group( 'reminder', $hydrated );
 
 			Repository::update(
 				'customer_appointments',
