@@ -18,18 +18,18 @@ function next() {
     <h3>Your details</h3>
     <p v-if="store.error" class="pxb-err">{{ store.error }}</p>
     <form class="pxb-form" @submit.prevent="next">
-      <input
+      <PxInput
         required
         placeholder="Full name"
         v-model="store.customer.full_name"
       />
-      <input
+      <PxInput
         required
         placeholder="Email"
         type="email"
         v-model="store.customer.email"
       />
-      <input placeholder="Phone" v-model="store.customer.phone" />
+      <PxInput placeholder="Phone" v-model="store.customer.phone" />
       <textarea placeholder="Notes" v-model="store.notes"></textarea>
       <template v-for="f in store.fields" :key="f.id">
         <label>{{ f.label }}</label>
@@ -53,10 +53,16 @@ function next() {
           </option>
         </PxSelect>
         <input
+          v-else-if="f.type === 'checkbox'"
+          v-model="store.custom_fields[f.id]"
+          type="checkbox"
+          :required="!!Number(f.required)"
+        />
+        <PxInput
           v-else
           v-model="store.custom_fields[f.id]"
           :type="
-            ['checkbox', 'number', 'date', 'email'].includes(f.type)
+            ['number', 'date', 'email'].includes(f.type)
               ? f.type
               : 'text'
           "
@@ -68,7 +74,7 @@ function next() {
         account</label
       >
       <div class="pxb-row">
-        <input placeholder="Coupon" v-model="store.coupon" />
+        <PxInput placeholder="Coupon" v-model="store.coupon" />
         <button
           class="pxb-btn ghost"
           type="button"

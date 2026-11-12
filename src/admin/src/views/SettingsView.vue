@@ -74,7 +74,7 @@ async function save() {
           class="px-field"
         >
           <label :for="field.key">{{ field.label }}</label
-          ><input :id="field.key" v-model="form[field.key]" :type="field.type || 'text'" />
+          ><PxInput :id="field.key" v-model="form[field.key]" :type="field.type || 'text'" />
         </div>
         <div class="px-field">
           <label for="currency">Currency</label
@@ -97,7 +97,7 @@ async function save() {
         </div>
         <div class="px-field">
           <label for="slot-length">Slot length (min)</label
-          ><input id="slot-length" v-model.number="form.slot_length" type="number" min="5" />
+          ><PxInput id="slot-length" v-model.number="form.slot_length" type="number" min="5" />
         </div>
         <div class="px-field">
           <label for="auto-approve">Auto-approve</label
@@ -122,7 +122,7 @@ async function save() {
           class="px-field"
         >
           <label :for="field.key">{{ field.label }}</label
-          ><input :id="field.key" v-model.number="form[field.key]" type="number" min="0" />
+          ><PxInput :id="field.key" v-model.number="form[field.key]" type="number" min="0" />
         </div>
         <div class="px-field">
           <label for="uninstall-data">Delete data on uninstall</label
@@ -190,7 +190,7 @@ async function save() {
               <label :for="credentialKey(gateway, field)"
                 >{{ form[gateway.key + '_sandbox'] ? 'Sandbox' : 'Live' }} {{ gateway.name }}
                 {{ field.label }}</label
-              ><input
+              ><PxInput
                 :id="credentialKey(gateway, field)"
                 v-model="form[credentialKey(gateway, field)]"
                 :type="field.type"

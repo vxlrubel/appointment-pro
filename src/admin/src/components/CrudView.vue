@@ -231,7 +231,7 @@ onMounted(async () => {
             </option>
           </PxSelect>
 
-          <input v-else v-model="form[field.key]" :type="field.type || 'text'" :step="field.step" />
+          <PxInput v-else v-model="form[field.key]" :type="field.type || 'text'" :step="field.step" />
         </div>
       </div>
     </form>

@@ -233,15 +233,15 @@ onMounted(load)
       <div class="px-form-row">
         <div class="px-field">
           <label>Name</label>
-          <input v-model="form.full_name" required />
+          <PxInput v-model="form.full_name" required />
         </div>
         <div class="px-field">
           <label>Email</label>
-          <input v-model="form.email" type="email" />
+          <PxInput v-model="form.email" type="email" />
         </div>
         <div class="px-field">
           <label>Phone</label>
-          <input v-model="form.phone" />
+          <PxInput v-model="form.phone" />
         </div>
         <div class="px-field">
           <label>Enabled</label>
@@ -293,13 +293,13 @@ onMounted(load)
           <div class="px-form-row">
             <div class="px-field">
               <label>From</label
-              ><input v-model="leave.start_datetime" type="datetime-local" required />
+              ><PxInput v-model="leave.start_datetime" type="datetime-local" required />
             </div>
             <div class="px-field">
               <label>Until</label
-              ><input v-model="leave.end_datetime" type="datetime-local" required />
+              ><PxInput v-model="leave.end_datetime" type="datetime-local" required />
             </div>
-            <div class="px-field"><label>Reason</label><input v-model="leave.reason" /></div>
+            <div class="px-field"><label>Reason</label><PxInput v-model="leave.reason" /></div>
             <label
               ><input v-model="leave.all_day" type="checkbox" :true-value="1" :false-value="0" />
               All day</label
@@ -320,7 +320,7 @@ onMounted(load)
             {{ location.name }}
           </option>
         </PxSelect>
-        <input
+        <PxInput
           v-model.number="link.price"
           type="number"
           min="0"

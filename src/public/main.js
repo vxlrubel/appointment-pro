@@ -1,4 +1,5 @@
 import PxSelect from "../shared/PxSelect.vue";
+import PxInput from "../shared/PxInput.vue";
 import PxCurrency from "../shared/PxCurrency.vue";
 import { createApp, reactive, watch } from "vue";
 import { createPinia } from "pinia";
@@ -38,6 +39,7 @@ function bookingApp(component, history, props = {}) {
   app.config.idPrefix = "px-booking-" + bookingInstance++;
   const pinia = createPinia();
   app.component("PxSelect", PxSelect);
+  app.component("PxInput", PxInput);
   app.component("PxCurrency", PxCurrency);
   app.use(pinia);
   const store = useBooking(pinia);

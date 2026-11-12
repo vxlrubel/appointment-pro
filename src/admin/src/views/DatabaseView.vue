@@ -209,7 +209,7 @@ async function importCsv() {
           templates are imported when present; missing events are seeded after import.
         </p>
 
-        <input type="file" accept=".csv,text/csv" :disabled="!!busy" @change="onFile" />
+        <PxInput type="file" accept=".csv,text/csv" :disabled="!!busy" @change="onFile" />
       </div>
       <div class="px-grid-footer">
         <button class="px-button" :disabled="!!busy || !importFile" @click="importCsv">

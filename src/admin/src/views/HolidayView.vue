@@ -157,11 +157,11 @@ onMounted(load)
         <div class="px-form-row">
           <div class="px-field">
             <label for="holiday-name">Name</label
-            ><input id="holiday-name" v-model="form.name" required maxlength="191" />
+            ><PxInput id="holiday-name" v-model="form.name" required maxlength="191" />
           </div>
           <div class="px-field">
             <label for="holiday-date">Date</label
-            ><input id="holiday-date" v-model="form.holiday_date" type="date" required />
+            ><PxInput id="holiday-date" v-model="form.holiday_date" type="date" required />
           </div>
           <div class="px-field">
             <label for="holiday-repeat">Repeat every year</label

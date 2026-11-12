@@ -104,7 +104,7 @@ onMounted(load)
       <div class="px-form-row">
         <div class="px-field">
           <label for="customer-custom-email">Custom email</label
-          ><input
+          ><PxInput
             id="customer-custom-email"
             v-model="preferences.notification_customer_email"
             type="email"
@@ -138,7 +138,7 @@ onMounted(load)
         <h3 class="mt-0">Edit {{ editing.event }}</h3>
         <div class="px-field">
           <label for="notification-subject">Subject</label
-          ><input id="notification-subject" v-model="editing.subject" required />
+          ><PxInput id="notification-subject" v-model="editing.subject" required />
         </div>
         <div class="px-field">
           <label for="notification-body">Full message (HTML supported)</label

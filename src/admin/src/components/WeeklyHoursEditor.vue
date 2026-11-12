@@ -131,16 +131,16 @@ function save() {
         </div>
         <div class="px-field">
           <label for="shift-start">Opens</label
-          ><input id="shift-start" v-model="form.start_time" type="time" required />
+          ><PxInput id="shift-start" v-model="form.start_time" type="time" required />
         </div>
         <div class="px-field">
           <label for="shift-end">Closes</label
-          ><input id="shift-end" v-model="form.end_time" type="time" required />
+          ><PxInput id="shift-end" v-model="form.end_time" type="time" required />
         </div>
       </div>
       <h3>Breaks</h3>
       <div v-for="(pause, index) in form.breaks" :key="index" class="px-row">
-        <input v-model="pause.start_time" type="time" required aria-label="Break starts" /><input
+        <PxInput v-model="pause.start_time" type="time" required aria-label="Break starts" /><PxInput
           v-model="pause.end_time"
           type="time"
           required

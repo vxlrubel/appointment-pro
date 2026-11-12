@@ -272,7 +272,7 @@ onMounted(load)
 
         <div class="px-field">
           <label>Date</label>
-          <input v-model="form.date" type="date" />
+          <PxInput v-model="form.date" type="date" />
         </div>
 
         <div class="px-field">
@@ -300,17 +300,17 @@ onMounted(load)
       <div class="px-form-row">
         <div class="px-field">
           <label>Customer name</label>
-          <input v-model="form.customer.full_name" required />
+          <PxInput v-model="form.customer.full_name" required />
         </div>
 
         <div class="px-field">
           <label>Email</label>
-          <input v-model="form.customer.email" type="email" required />
+          <PxInput v-model="form.customer.email" type="email" required />
         </div>
 
         <div class="px-field">
           <label>Phone</label>
-          <input v-model="form.customer.phone" />
+          <PxInput v-model="form.customer.phone" />
         </div>
       </div>
 

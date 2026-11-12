@@ -160,7 +160,7 @@ header.px-header {
 	color: #50575e;
 }
 
-.px-field input,
+.px-field input:not(.px-input),
 .px-field .px-select-trigger,
 .px-field textarea {
 	width: 100%;
@@ -174,7 +174,7 @@ header.px-header {
 	box-sizing: border-box;
 }
 
-.px-field input:focus,
+.px-field input:not(.px-input):focus,
 .px-field .px-select-trigger:focus,
 .px-field textarea:focus {
 	outline: 2px solid rgba(13, 110, 253, 0.25);

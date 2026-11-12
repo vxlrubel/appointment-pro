@@ -136,11 +136,11 @@ onMounted(load)
       <p v-if="error" class="px-error" role="alert">{{ error }}</p>
       <div class="px-field">
         <label for="affiliate-name">Name</label
-        ><input id="affiliate-name" v-model="form.name" required maxlength="191" />
+        ><PxInput id="affiliate-name" v-model="form.name" required maxlength="191" />
       </div>
       <div class="px-field">
         <label for="affiliate-url">Booking page URL</label
-        ><input
+        ><PxInput
           id="affiliate-url"
           v-model="form.booking_url"
           type="url"

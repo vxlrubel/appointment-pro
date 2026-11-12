@@ -67,7 +67,7 @@
   display: grid;
   gap: 8px;
 }
-.pxb-form input,
+.pxb-form input:not(.px-input),
 .pxb-form textarea,
 .pxb-form .px-select-trigger {
   padding: 8px;
