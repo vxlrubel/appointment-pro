@@ -34,12 +34,16 @@ export default defineConfig(({ command }) => ({
     outDir: path.resolve(import.meta.dirname, '../../lib/admin'),
     emptyOutDir: true,
     rollupOptions: {
+      // Keep the WordPress entry a facade. Lazy views must never import the
+      // bootstrap again as plain main.js when WordPress loaded main.js?ver=….
+      preserveEntrySignatures: 'strict',
       input: path.resolve(import.meta.dirname, 'src/main.ts'),
 
       output: {
         entryFileNames: 'main.js',
-        chunkFileNames: 'chunk-[name].js',
-        assetFileNames: '[name].[ext]',
+        chunkFileNames: 'chunk-[name]-[hash].js',
+        assetFileNames: (asset) =>
+          asset.names.includes('main.css') ? 'main.css' : '[name]-[hash][extname]',
       },
     },
   },
