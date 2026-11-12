@@ -180,7 +180,7 @@ After installing dependencies with `npm ci` in `src/admin`, run this from the pl
 .\create-plugin-zip.bat
 ```
 
-The script runs `npm run build:all`, verifies the required runtime files, and writes:
+The script runs `npm run build:all`, verifies the required runtime files and content-hashed JavaScript/CSS dependencies, and writes:
 
 ```text
 dist/px-appointment-pro-<version>.zip

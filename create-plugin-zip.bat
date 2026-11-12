@@ -82,14 +82,41 @@ try {
         'appointment-pro.php', 'uninstall.php', 'inc/AppointmentPro.php',
         'inc/Installer.php', 'inc/PublicSite/Frontend.php', 'inc/Rest/Rest.php',
         'lib/admin/main.js', 'lib/admin/main.css',
-        'lib/admin/chunk-DatabaseView.js', 'lib/admin/chunk-DocumentView.js',
-        'lib/admin/chunk-HolidayView.js', 'lib/admin/HolidayView.css',
+        'inc/Admin/Cache.php',
         'inc/Domain/Holidays.php', 'inc/Domain/BusinessHours.php', 'inc/Domain/Affiliates.php',
-        'inc/Domain/Currency.php', 'lib/admin/chunk-BusinessHoursView.js',
-        'lib/admin/chunk-AffiliateView.js', 'lib/admin/AffiliateView.css', 'THIRD-PARTY-NOTICES.md',
+        'inc/Domain/Currency.php', 'THIRD-PARTY-NOTICES.md',
         'lib/public/public.js', 'lib/public/public.css', 'lib/editor/booking-block.js'
     )
     $relativeFiles = @($files | ForEach-Object { $_.Substring($pluginRoot.Length + 1).Replace('\', '/') })
+    # Lazy views and their CSS use content hashes; never require obsolete stable names.
+    foreach ($pattern in @(
+        'lib/admin/chunk-DatabaseView-*.js', 'lib/admin/DatabaseView-*.css',
+        'lib/admin/chunk-DocumentView-*.js', 'lib/admin/DocumentView-*.css',
+        'lib/admin/chunk-HolidayView-*.js', 'lib/admin/HolidayView-*.css',
+        'lib/admin/chunk-BusinessHoursView-*.js',
+        'lib/admin/chunk-AffiliateView-*.js', 'lib/admin/AffiliateView-*.css'
+    )) {
+        $matchingFiles = @($relativeFiles | Where-Object { $_ -like $pattern })
+        if ($matchingFiles.Count -eq 0) { throw "Required built asset is missing: $pattern" }
+        $required += $matchingFiles
+    }
+
+    # Validate imports and Vite preload dependencies, including shared JS and CSS.
+    $assetReferencePattern = @'
+["'`](?<path>\.\.?/[^"'`\r\n]+\.(?:js|css))["'`]
+'@
+    $runtimeRoot = [IO.Path]::GetFullPath((Join-Path $pluginRoot 'lib')) + [IO.Path]::DirectorySeparatorChar
+    foreach ($path in $files) {
+        if ([IO.Path]::GetExtension($path) -ne '.js') { continue }
+        foreach ($match in [regex]::Matches([IO.File]::ReadAllText($path), $assetReferencePattern)) {
+            $dependency = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetDirectoryName($path)) $match.Groups['path'].Value))
+            if (-not $dependency.StartsWith($runtimeRoot, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Built asset references a path outside lib: $($match.Groups['path'].Value)"
+            }
+            $required += $dependency.Substring($pluginRoot.Length + 1).Replace('\', '/')
+        }
+    }
+    $required = @($required | Sort-Object -Unique)
     foreach ($name in $required) {
         if ($relativeFiles -notcontains $name) { throw "Required runtime file is missing: $name" }
     }
