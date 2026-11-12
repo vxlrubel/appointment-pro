@@ -115,6 +115,7 @@ class AdminMenu {
 			array(
 				'root'  => esc_url_raw( rest_url( Rest::NS . '/' ) ),
 				'nonce' => wp_create_nonce( 'wp_rest' ),
+				'cache' => Cache::state(),
 			)
 		);
 	}
