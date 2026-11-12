@@ -38,3 +38,5 @@ foreach ( $tables as $table ) {
 delete_option( 'px_appointment_settings' );
 delete_option( 'px_appointment_db_version' );
 delete_option( 'px_appointment_mail_error' );
+delete_option( 'px_appointment_admin_cache_enabled' );
+delete_option( 'px_appointment_admin_cache_version' );
