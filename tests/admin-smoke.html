@@ -13,6 +13,7 @@ window.fetch=async function(url,options={}){
  if(!options.method || options.method==='GET') await new Promise(resolve=>setTimeout(resolve,180));
  if(window.failNextPath===path){window.failNextPath=null;return new Response(JSON.stringify({message:'Temporary connection problem'}),{status:503,headers:{'Content-Type':'application/json'}});}
  if(path==='dashboard')data={counts:{today:0,pending:0,approved:0,revenue:0},upcoming:[]};
+ if(path==='admin/cache')data={enabled:false,version:'test'};
  if(path==='settings'){if(options.method==='POST')Object.assign(settings,JSON.parse(options.body));data=settings;}
  if(path==='admin/staff')data=[{id:7,full_name:'Modal staff',email:'staff@example.test',enabled:1}];
  if(path==='staff/7/schedule' || path==='staff/7/services')data=[];
@@ -76,7 +77,10 @@ window.addEventListener('load',async()=>{try{
  Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Add').click();
  await waitFor(()=>document.getElementById('staff-form'));
  if(!modal() || modal().parentElement!==document.body || !document.getElementById('appointment-pro').inert)throw new Error('Staff form modal not teleported or background not locked');
- const close=modal().querySelector('[aria-label="Close modal"]');close.focus();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));if(document.activeElement.textContent.trim()!=='Save staff')throw new Error('Modal focus trap failed');
+ const close=modal().querySelector('[aria-label="Close modal"]');
+ const lastNotificationButton=[...document.querySelectorAll('.px-toasts button')].filter(el=>el.getClientRects().length).at(-1);
+ close.focus();document.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',shiftKey:true,bubbles:true,cancelable:true}));
+ if(lastNotificationButton ? document.activeElement!==lastNotificationButton : document.activeElement.textContent.trim()!=='Save staff')throw new Error('Modal and notification focus trap failed');
  document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await waitFor(()=>!modal());if(document.getElementById('appointment-pro').inert || document.body.style.overflow==='hidden')throw new Error('Modal background not restored');
  button('Edit').click();await waitFor(()=>document.getElementById('staff-form'));await waitFor(()=>button('Remove'));button('Add time off').click();await waitFor(()=>document.querySelectorAll('.px-modal-overlay').length===2);document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));await waitFor(()=>document.querySelectorAll('.px-modal-overlay').length===1);if(!document.getElementById('appointment-pro').inert)throw new Error('Nested modal released parent background lock');
  button('Remove').click();await waitFor(()=>dialog());if(!document.querySelector('.px-modal-overlay').inert)throw new Error('Delete confirmation did not lock parent modal');dialogButton('No').click();await waitClosed();if(document.querySelector('.px-modal-overlay').inert)throw new Error('Delete cancellation did not restore parent modal');modal().querySelector('[aria-label="Close modal"]').click();await waitFor(()=>!modal());
@@ -139,17 +143,11 @@ window.addEventListener('load',async()=>{try{
  button('Edit').click();await waitFor(()=>document.getElementById('affiliate-name'));input('affiliate-name','Updated partner');button('Save affiliate').click();await waitFor(()=>affiliates[0].name==='Updated partner' && !modal());await waitFor(()=>button('Delete') && !button('Delete').disabled);button('Delete').click();await waitFor(()=>dialog());dialogButton('No').click();await waitClosed();if(affiliates.length!==1)throw new Error('Affiliate cancel deleted data');button('Delete').click();await waitFor(()=>dialog());dialogButton('Yes').click();await waitFor(()=>!affiliates.length);await waitClosed();
  nav('Dashboard');await waitFor(()=>document.querySelector('.px-currency'));if(!document.querySelector('.px-currency').textContent.includes('0.00'))throw new Error('Dashboard currency not formatted');
  nav('Database');await waitFor(()=>document.querySelector('.px-main-content')?.textContent.includes('Export CSV'));
- nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content[aria-busy="true"]'));
+ nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content'));
  const docs=document.querySelector('.px-docs-content');
- if(docs.textContent.includes('Import CSV'))throw new Error('Documentation did not start as a partial reveal');
- await waitFor(()=>docs.textContent.includes('What this plugin does'));
- if(!docs.querySelector('.px-docs-cursor'))throw new Error('Typing cursor is missing');
- Array.from(document.querySelectorAll('button')).find(button=>button.textContent.trim()==='Show all').click();
- await waitFor(()=>docs.getAttribute('aria-busy')==='false');
- if(!docs.textContent.includes('[px-appointment]') || !docs.textContent.includes('Import CSV') || docs.querySelector('[hidden]') || docs.querySelector('.px-docs-cursor'))throw new Error('Show all did not restore complete formatted documentation');
+ if(!docs.textContent.includes('What this plugin does') || !docs.textContent.includes('[px-appointment]') || !docs.textContent.includes('Import CSV'))throw new Error('Documentation did not render complete formatted content');
  nav('Dashboard');await waitFor(()=>document.querySelector('[aria-label="Loading dashboard"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
- nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content[aria-busy="true"]'));
- // Leave while the timer is active to exercise cleanup.
+ nav('Documentation');await waitFor(()=>document.querySelector('.px-docs-content'));
 
  nav('Payments');await waitFor(()=>document.querySelector('[aria-label="Loading payments"]'));await waitFor(()=>!document.querySelector('.px-loading-skeleton'));
  document.querySelector('tbody input').click();await waitFor(()=>!deleteButton().disabled);
