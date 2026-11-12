@@ -139,6 +139,11 @@
             <div class="px-anim-fadein" style="--px-table-row-index: 7">
                 <h3>7. Move data between sites</h3>
                 <p>
+                    On <strong>Database</strong>, enable <strong>Admin cache</strong> to speed up repeat visits to
+                    admin pages. Changes refresh cached data automatically. Use <strong>Purge cache</strong> to
+                    reload fresh data on the next visit. Frontend booking availability always stays live.
+                </p>
+                <p>
                     On <strong>Database</strong>, use <strong>Export CSV</strong> on the source site, then
                     <strong>Import CSV</strong> on the destination. The file includes locations, services, staff,
                     schedules, customers, appointments, extras, coupons, custom fields, holidays, and notification
