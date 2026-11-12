@@ -20,6 +20,12 @@
 	border-radius: 4px;
 	background: var(--px-success-color-light);
 }
+.border-bottom{
+  border-bottom: 1px solid var(--px-line);
+}
+.pb-2{
+  padding-bottom: 0.75rem;
+}
 .mt-0{
 	margin-top: 0;
 }
@@ -150,7 +156,15 @@ button.px-button-outline.done:hover {
 		}
 	}
 }
-
+  .icon-button{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    width: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+  }
 
 
 /* animation section */

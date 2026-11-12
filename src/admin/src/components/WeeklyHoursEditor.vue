@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import PxModal from './PxModal.vue'
+import EditIcon from './icons/IconEdit.vue'
+import IconDelete from './icons/IconDelete.vue'
 const props = defineProps({
   modelValue: { type: Array, required: true },
   locations: { type: Array, default: () => [] },
@@ -52,24 +54,42 @@ function save() {
 <template>
   <div class="px-weekly-hours">
     <p v-if="!modelValue.length" class="px-muted">No weekly hours configured.</p>
-    <div v-for="(shift, index) in modelValue" :key="index" class="px-row">
-      <strong>{{ weekdays[shift.weekday] }}</strong
-      ><span>{{ shift.start_time }} &ndash; {{ shift.end_time }}</span
-      ><span>{{
-        locations.find((item) => Number(item.id) === Number(shift.location_id))?.name ||
-        'All locations'
-      }}</span
-      ><span>{{ (shift.breaks || []).length }} breaks</span
-      ><button
+    <div v-for="(shift, index) in modelValue" :key="index" class="border-bottom mb-3 pb-2">
+
+      <div class="day-row">
+        <div>
+          <strong>{{ weekdays[shift.weekday] }}</strong> <span>{{ shift.start_time }} &ndash; {{ shift.end_time }}</span>
+        </div>
+        <div>
+          <div v-if="shift?.breaks && shift.breaks.length">
+            <strong>Breaks:</strong>
+            <div v-for="(item, index) in shift?.breaks" :key="index" class="break-row">
+              {{ item.start_time }} &ndash; {{ item.end_time }}
+            </div>
+          </div>
+          <div v-else>No breaks</div>
+        </div>
+
+        <div>
+          location: <br>
+          {{
+            locations.find((item) => Number(item.id) === Number(shift.location_id))?.name ||
+            'All locations'
+          }}
+        </div>
+      </div>
+
+      <button
         type="button"
-        class="px-button-outline approve"
+        class="px-button-outline icon-button approve"
         :disabled="disabled"
         @click="edit(index)"
       >
-        Edit shift</button
+        <EditIcon />
+      </button
       ><button
         type="button"
-        class="px-button-outline cancel"
+        class="px-button-outline cancel icon-button"
         :disabled="disabled"
         @click="
           emit(
@@ -78,7 +98,7 @@ function save() {
           )
         "
       >
-        Remove shift
+        <IconDelete />
       </button>
     </div>
     <button type="button" class="px-button px-button-ghost" :disabled="disabled" @click="edit()">
@@ -143,3 +163,20 @@ function save() {
     </form></PxModal
   >
 </template>
+
+<style scoped>
+  .day-row {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    padding-bottom: 10px;
+  }
+
+  .break-row {
+    padding: 5px;
+    width: fit-content;
+    margin-top: 7px;
+    border-radius: 4px;
+    background-color: #dee2e6;
+  }
+</style>
