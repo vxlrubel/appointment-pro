@@ -376,9 +376,9 @@ onBeforeUnmount(() => {
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
-        height="24"
-        width="24"
-        fill="#222"
+        height="18"
+        width="18"
+        fill="#444"
         aria-hidden="true"
         focusable="false"
       >
