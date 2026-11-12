@@ -36,6 +36,7 @@ class Rest {
 	public function register() {
 		$pub  = array( $this, 'public_perm' );
 		$adm  = array( $this, 'admin_perm' );
+		\Praxleo\Appointment\Admin\Cache::register( $adm );
 
         register_rest_route( self::NS, '/admin/business-hours', array(
             array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => static fn() => \Praxleo\Appointment\Domain\BusinessHours::all() ),
