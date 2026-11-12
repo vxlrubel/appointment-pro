@@ -156,14 +156,14 @@ button.px-button-outline.done:hover {
 		}
 	}
 }
-  .icon-button{
+.icon-button{
     display: inline-flex;
     align-items: center;
     justify-content: center;
     height: 30px;
     width: 30px;
     min-width: 30px;
-    border-radius: 50%;
+    border-radius: 50% !important;
   }
 
 
