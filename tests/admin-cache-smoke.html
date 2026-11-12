@@ -8,6 +8,11 @@ let services = [{ id: 1, name: 'Initial service', category_id: 1, price: 50, dur
 const counts = {};
 window.pxAppointmentAdmin = { root: '/mock-cache/', nonce: 'test', cache: { enabled: true, version: '1' } };
 window.addEventListener('unhandledrejection', event => { result.dataset.error = String(event.reason); });
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  result.dataset.error = args.map(value => value instanceof Error ? value.message : String(value)).join(' ');
+  originalConsoleError(...args);
+};
 window.fetch = async (url, options = {}) => {
   const route = String(url).replace('/mock-cache/', '').split('?')[0];
   const method = options.method || 'GET';
@@ -79,8 +84,13 @@ window.addEventListener('load', async () => {
     if (document.querySelector('.px-cache-toggle input').checked || enabled) throw Error('Failed cache toggle did not retain the saved preference');
     document.querySelector('.px-cache-toggle input').click();
     await waitFor(() => enabled && document.querySelector('.px-cache-toggle input').checked && !document.querySelector('.px-cache-toggle input').disabled);
+    if (document.querySelectorAll('.px-toasts').length !== 1) throw Error('Admin application mounted more than once');
     if (result.dataset.error) throw Error(result.dataset.error);
     result.textContent = 'PASS admin cache: instant repeated reads, updated records after creation, purge, cross-tab invalidation, enable/disable persistence and failed-toggle recovery';
-  } catch (error) { result.textContent = 'FAIL ' + error.message; }
+  } catch (error) { result.textContent = 'FAIL ' + (result.dataset.error || error.message); }
 });
-</script><script type="module" src="../lib/admin/main.js"></script></body></html>
+</script><script type="module">
+const entry = new URL('../lib/admin/main.js', location.href);
+if (new URLSearchParams(location.search).get('entry') === 'wordpress') entry.searchParams.set('ver', 'wordpress-smoke');
+await import(entry.href);
+</script></body></html>
