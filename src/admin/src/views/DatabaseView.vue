@@ -1,7 +1,8 @@
 <script setup>
 import { useToastFeedback } from '../../../shared/useToastFeedback'
-import { ref } from 'vue'
-import { api } from '../api'
+import { onMounted, ref } from 'vue'
+import { api, refreshAdminCacheSettings } from '../api'
+import { adminCacheState, configureAdminCache } from '../cache'
 import DeleteConfirmation from '../components/DeleteConfirmation.vue'
 import { useDeleteConfirmation } from '../composables/useDeleteConfirmation'
 const { confirmation, confirmDelete, resolveDelete } = useDeleteConfirmation()
@@ -10,6 +11,58 @@ const busy = ref('')
 const message = ref('')
 const error = ref('')
 const importFile = ref(null)
+const cacheLoading = ref(true)
+
+onMounted(async () => {
+  try {
+    await refreshAdminCacheSettings()
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    cacheLoading.value = false
+  }
+})
+
+async function changeCache(event) {
+  const enabled = event.target.checked
+  event.target.checked = adminCacheState.enabled
+  busy.value = 'cache'
+  clearStatus()
+  try {
+    const settings = await api('admin/cache', {
+      method: 'POST',
+      body: { enabled },
+      toast: {
+        working: 'Updating cache settings…',
+        success: enabled ? 'Admin cache enabled.' : 'Admin cache disabled.',
+      },
+    })
+    configureAdminCache(settings)
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    busy.value = ''
+  }
+}
+
+async function purgeCache() {
+  busy.value = 'purge'
+  clearStatus()
+  try {
+    const settings = await api('admin/cache', {
+      method: 'DELETE',
+      toast: {
+        working: 'Purging cached data…',
+        success: 'Admin cache purged. Pages will load fresh data.',
+      },
+    })
+    configureAdminCache(settings)
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    busy.value = ''
+  }
+}
 
 function clearStatus() {
   message.value = ''
@@ -179,6 +232,7 @@ useToastFeedback(error)
   <p v-if="message" class="px-success">{{ message }}</p>
 
   <div class="px-dynamic-grid" style="--min-width: 300px">
+
     <div class="px-grid-item" style="--grid-item-index: 0">
       <h3 class="mt-0">01. Reset Database</h3>
       <div class="px-grid-body">
@@ -238,5 +292,57 @@ useToastFeedback(error)
         </button>
       </div>
     </div>
+    <div class="px-grid-item px-cache-card" style="--grid-item-index: 4">
+      <h3 class="mt-0">05. Admin cache</h3>
+      <div class="px-grid-body">
+        <p class="px-muted mt-0">
+          Speed up repeat visits to admin pages. Creating, editing or deleting records refreshes
+          cached data automatically.
+        </p>
+        <label class="px-cache-toggle">
+          <input
+            type="checkbox"
+            :checked="adminCacheState.enabled"
+            :disabled="cacheLoading || !!busy"
+            @change="changeCache"
+          />
+          Enable cache
+        </label>
+        <p class="px-muted">
+          {{
+            cacheLoading
+              ? 'Loading cache settings…'
+              : adminCacheState.enabled
+                ? 'Admin cache is enabled.'
+                : 'Admin cache is disabled.'
+          }}
+        </p>
+      </div>
+      <div class="px-grid-footer">
+        <button
+          type="button"
+          class="px-button"
+          :disabled="cacheLoading || !!busy"
+          @click="purgeCache"
+        >
+          {{ busy === 'purge' ? 'Purging…' : 'Purge cache' }}
+        </button>
+      </div>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.px-cache-card .px-grid-body {
+  max-height: none;
+}
+.px-cache-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.px-cache-toggle input {
+  margin: 0;
+}
+</style>
