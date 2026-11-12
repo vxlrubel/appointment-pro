@@ -329,6 +329,10 @@ Saved holidays apply to every location in the company timezone. Customers cannot
 
 ### Database tools and uninstall
 
+The **Admin cache** card in **Database** has an **Enable cache** preference (off by default) and a **Purge cache** button. Enabling it makes repeat visits to admin menus use cached reads. Records stay in the current page's memory; no customer data or payment credentials are stored in browser storage. Reloading the page starts with an empty cache.
+
+Creating, editing, deleting, importing, or resetting data invalidates cached reads automatically, including when toast feedback is disabled. Purging also invalidates other open admin tabs. Admin tabs check the server revision every 15 seconds and refresh their cache when focused; catalog entries expire after 30 seconds, and appointments, payments and dashboard entries after 5 seconds. Availability, payment settings, token-based booking details and frontend booking requests always use live responses.
+
 The **Database** screen provides CSV export/import, demo insertion, and reset. Import replaces tables present in the uploaded export; demo insertion replaces current booking content. Export a backup before using these replacement operations. Reset keeps notification templates. Demo insertion creates 30 appointments, 30 medical services, 5 medical categories, 5 doctors, 5 locations, 2 extras, 2 coupons, and 3 custom fields. It does not send notifications or create WordPress user accounts.
 
 Deactivation stops the scheduled maintenance event. Uninstall retains booking data by default; enable **Delete data on uninstall** in Settings only when you want the plugin's tables and primary options removed.
