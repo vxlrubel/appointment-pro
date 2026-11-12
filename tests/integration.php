@@ -28,6 +28,8 @@ $original_settings = get_option('px_appointment_settings', null);
 $original_error = get_option('px_appointment_mail_error', null);
 $original_version = get_option('px_appointment_db_version', null);
 $original_user = get_current_user_id();
+$original_cache_enabled = get_option('px_appointment_admin_cache_enabled', null);
+$original_cache_version = get_option('px_appointment_admin_cache_version', null);
 add_filter('pre_wp_mail', '__return_true');
 try {
  $wpdb->prefix = $test_prefix;
@@ -66,6 +68,9 @@ try {
  wp_set_current_user(0);
  check(request('GET','admin/customers')->get_status() === 401, 'Guest cannot read customers');
  check(request('GET','settings')->get_status() === 401, 'Guest cannot read payment secrets');
+ check(request('GET','admin/cache')->get_status() === 401, 'Guest cannot read admin cache preferences');
+ check(request('POST','admin/cache',['enabled'=>true])->get_status() === 401, 'Guest cannot enable admin caching');
+ check(request('DELETE','admin/cache')->get_status() === 401, 'Guest cannot purge admin caching');
  check(request('GET','admin/business-hours')->get_status() === 401, 'Guest cannot manage business hours');
  check(request('GET','admin/affiliates')->get_status() === 401, 'Guest cannot list affiliate links');
  check(request('GET','admin/affiliates/1/bookings')->get_status() === 401, 'Guest cannot read affiliate bookings');
@@ -80,7 +85,16 @@ try {
  $admin = get_users(['role'=>'administrator','number'=>1]);
  check(!empty($admin), 'Administrator available for integration checks');
  wp_set_current_user($admin[0]->ID);
+ check(request('POST','admin/cache',['enabled'=>'yes'])->get_status()===400,'Cache preferences require a boolean');
+ $cache_state=request('POST','admin/cache',['enabled'=>true])->get_data();
+ check($cache_state['enabled']===true && !empty($cache_state['version']),'Admin cache preference persists');
+ $cache_read=request('GET','admin/cache');
+ check($cache_read->get_data()===$cache_state,'Reading cache preferences preserves the revision');
+ check($cache_read->get_headers()['Cache-Control']==='no-store, private','REST responses bypass HTTP caches');
+ $purged=request('DELETE','admin/cache')->get_data();
+ check($purged['enabled'] && $purged['version']!==$cache_state['version'],'Purging rotates the revision without disabling cache');
  $location = request('POST','admin/locations',['name'=>'Integration venue','enabled'=>1])->get_data();
+ check(request('GET','admin/cache')->get_data()['version']!==$purged['version'],'Creating a record invalidates cached admin data');
  $service = request('POST','admin/services',['name'=>'Integration service','duration_sec'=>1800,'price'=>50,'enabled'=>1])->get_data();
  $staff = request('POST','admin/staff',['full_name'=>'Integration staff','enabled'=>1])->get_data();
  check(!empty($location['id']) && !empty($service['id']) && !empty($staff['id']), 'Current admin CRUD creates records');
@@ -173,9 +187,11 @@ try {
  check(request('POST','appointments',$payload)->get_status()===400, 'Required custom fields enforced');
  $payload['custom_fields'] = [];
  foreach(R::all('custom_fields',['enabled'=>1]) as $field) { $options=json_decode($field['options_json'] ?: '[]',true); $payload['custom_fields'][$field['id']] = $field['type']==='select' ? ($options[0] ?? 'Test') : 'Test'; }
+ $before_booking_cache_version = \Praxleo\Appointment\Admin\Cache::state()['version'];
  $booking_response = request('POST','appointments',$payload);
  $booking = $booking_response->get_data();
  check($booking_response->get_status()===200 && !empty($booking['appointment']['id']), 'Guest can book with local payment');
+ check(\Praxleo\Appointment\Admin\Cache::state()['version']!==$before_booking_cache_version,'Public bookings invalidate admin caches');
  check($booking['appointment']['status']==='approved' && (float)$booking['amount']===45.0, 'Staff price override and auto approval applied');
  check(count($booking['payments'])===1 && $booking['payments'][0]['status']==='completed', 'Local payment recorded exactly once');
  R::update('staff_schedule',['end_time'=>'09:30:00'],['staff_id'=>$id]);
@@ -320,7 +336,7 @@ try {
   $wpdb->query("DROP TABLE IF EXISTS `$name`");
  }
  $wpdb->prefix=$original_prefix;
- foreach(['px_appointment_settings'=>$original_settings,'px_appointment_mail_error'=>$original_error,'px_appointment_db_version'=>$original_version] as $key=>$value) { $value===null ? delete_option($key) : update_option($key,$value); }
+ foreach(['px_appointment_settings'=>$original_settings,'px_appointment_mail_error'=>$original_error,'px_appointment_db_version'=>$original_version,'px_appointment_admin_cache_enabled'=>$original_cache_enabled,'px_appointment_admin_cache_version'=>$original_cache_version] as $key=>$value) { $value===null ? delete_option($key) : update_option($key,$value); }
  wp_set_current_user($original_user);
 }
 
