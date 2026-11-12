@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../lib/admin/main.css"></head>
+<body><div id="appointment-pro"></div><pre id="test-result">RUNNING</pre>
+<script>
+const result = document.getElementById('test-result');
+let revision = 1, enabled = true, failToggle = false;
+let services = [{ id: 1, name: 'Initial service', category_id: 1, price: 50, duration_sec: 1800, enabled: 1 }];
+const counts = {};
+window.pxAppointmentAdmin = { root: '/mock-cache/', nonce: 'test', cache: { enabled: true, version: '1' } };
+window.addEventListener('unhandledrejection', event => { result.dataset.error = String(event.reason); });
+window.fetch = async (url, options = {}) => {
+  const route = String(url).replace('/mock-cache/', '').split('?')[0];
+  const method = options.method || 'GET';
+  counts[method + ' ' + route] = (counts[method + ' ' + route] || 0) + 1;
+  await new Promise(resolve => setTimeout(resolve, 30));
+  let data = [];
+  if (route === 'admin/cache') {
+    if (method === 'POST') {
+      if (failToggle) {
+        failToggle = false;
+        return new Response(JSON.stringify({ message: 'Could not save cache preference' }), { status: 503 });
+      }
+      enabled = JSON.parse(options.body).enabled;
+    }
+    if (method !== 'GET') revision++;
+    data = { enabled, version: String(revision) };
+  } else if (route === 'settings') data = { currency: 'USD' };
+  else if (route === 'dashboard') data = { counts: {}, upcoming: [] };
+  else if (route === 'admin/categories') data = [{ id: 1, name: 'Category' }];
+  else if (route === 'admin/services') {
+    if (method === 'POST') {
+      const created = { ...JSON.parse(options.body), id: 2 };
+      services.push(created); revision++; data = created;
+    } else data = services;
+  }
+  return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', 'X-PX-Cache-Version': String(revision) } });
+};
+async function waitFor(check) {
+  for (let n = 0; n < 200; n++) { if (check()) return; await new Promise(resolve => setTimeout(resolve, 20)); }
+  throw Error('Timed out: ' + check);
+}
+function nav(label) { [...document.querySelectorAll('.px-sidebar a')].find(link => link.textContent.trim() === label).click(); }
+function button(label) { return [...document.querySelectorAll('.px-main-content button, .px-modal button')].find(item => item.textContent.trim() === label); }
+const serviceReady = () => document.querySelector('.px-table')?.textContent.includes('Initial service') && !document.querySelector('.px-loading-skeleton');
+async function roundTrip() {
+  nav('Categories'); await waitFor(() => document.querySelector('.px-page-title')?.textContent === 'Categories' && !document.querySelector('.px-loading-skeleton'));
+  nav('Services'); await waitFor(serviceReady);
+}
+window.addEventListener('load', async () => {
+  try {
+    await waitFor(() => document.querySelector('.px-page-title') && !document.querySelector('.px-loading-skeleton'));
+    nav('Services'); await waitFor(serviceReady);
+    const firstReads = counts['GET admin/services'];
+    await roundTrip();
+    if (counts['GET admin/services'] !== firstReads) throw Error('Repeat menu visit fetched cached services');
+    button('Add').click(); await waitFor(() => document.querySelector('#crud-form'));
+    const input = document.querySelector('#crud-form input'); input.value = 'Created service'; input.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('#crud-form').requestSubmit();
+    await waitFor(() => !document.querySelector('.px-modal') && document.querySelector('.px-table')?.textContent.includes('Created service'));
+    if (counts['GET admin/services'] <= firstReads) throw Error('Create did not reload cached services');
+    const afterCreate = counts['GET admin/services']; await roundTrip();
+    if (counts['GET admin/services'] !== afterCreate) throw Error('Updated data was not cached');
+    nav('Database'); await waitFor(() => button('Purge cache') && !button('Purge cache').disabled);
+    button('Purge cache').click(); await waitFor(() => button('Purge cache') && !button('Purge cache').disabled && counts['DELETE admin/cache']);
+    nav('Services'); await waitFor(serviceReady);
+    if (counts['GET admin/services'] <= afterCreate) throw Error('Purge did not fetch fresh data');
+    const beforeRemote = counts['GET admin/services'];
+    revision++; window.dispatchEvent(new StorageEvent('storage', { key: 'px-appointment-cache:/mock-cache/', newValue: 'changed' }));
+    await new Promise(resolve => setTimeout(resolve, 80)); await roundTrip();
+    if (counts['GET admin/services'] <= beforeRemote) throw Error('Cross-tab invalidation did not refresh services');
+    nav('Database'); await waitFor(() => document.querySelector('.px-cache-toggle input:not(:disabled)'));
+    document.querySelector('.px-cache-toggle input').click();
+    await waitFor(() => !enabled && document.querySelector('.px-cache-card').textContent.includes('Admin cache is disabled.'));
+    nav('Services'); await waitFor(serviceReady); const disabledReads = counts['GET admin/services'];
+    await roundTrip(); if (counts['GET admin/services'] !== disabledReads + 1) throw Error('Disabled cache still served cached records');
+    nav('Database'); await waitFor(() => document.querySelector('.px-cache-toggle input:not(:disabled)'));
+    failToggle = true; document.querySelector('.px-cache-toggle input').click();
+    await waitFor(() => document.querySelector('.px-error')?.textContent.includes('Could not save cache preference'));
+    if (document.querySelector('.px-cache-toggle input').checked || enabled) throw Error('Failed cache toggle did not retain the saved preference');
+    document.querySelector('.px-cache-toggle input').click();
+    await waitFor(() => enabled && document.querySelector('.px-cache-toggle input').checked && !document.querySelector('.px-cache-toggle input').disabled);
+    if (result.dataset.error) throw Error(result.dataset.error);
+    result.textContent = 'PASS admin cache: instant repeated reads, updated records after creation, purge, cross-tab invalidation, enable/disable persistence and failed-toggle recovery';
+  } catch (error) { result.textContent = 'FAIL ' + error.message; }
+});
+</script><script type="module" src="../lib/admin/main.js"></script></body></html>
