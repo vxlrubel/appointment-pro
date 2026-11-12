@@ -1,5 +1,7 @@
 import PxSelect from "../shared/PxSelect.vue";
 import PxInput from "../shared/PxInput.vue";
+import PxToast from "../shared/PxToast.vue";
+import { toast } from "../shared/toast";
 import PxCurrency from "../shared/PxCurrency.vue";
 import { createApp, reactive, watch } from "vue";
 import { createPinia } from "pinia";
@@ -43,6 +45,41 @@ function bookingApp(component, history, props = {}) {
   app.component("PxCurrency", PxCurrency);
   app.use(pinia);
   const store = useBooking(pinia);
+  let workingToast;
+  const stopErrors = watch(() => store.error, (message) => {
+    if (message) toast.error(message);
+  }, { flush: "sync" });
+  const stopWorking = watch(() => {
+    if (store.loading) return "Preparing your booking…";
+    if (store.pending.coupon) return "Checking your coupon…";
+    if (store.pending.boot) return "Loading services…";
+    if (store.pending.staff) return "Loading booking options…";
+    if (store.pending.month || store.pending.slots) return "Checking availability…";
+    return "";
+  }, (message) => {
+    if (message) {
+      workingToast = workingToast
+        ? toast.update(workingToast, message, "working")
+        : toast.working(message);
+    } else if (workingToast) {
+      toast.dismiss(workingToast);
+      workingToast = undefined;
+    }
+  }, { immediate: true });
+  const stopCoupon = watch(() => store.couponInfo, (coupon) => {
+    if (coupon) toast.success("Coupon applied successfully.");
+  });
+  router.afterEach((to, from, failure) => {
+    if (!failure && to.name === "done" && from.name !== "done") {
+      toast.success("Your booking is complete.");
+    }
+  });
+  app.onUnmount(() => {
+    stopErrors();
+    stopWorking();
+    stopCoupon();
+    if (workingToast) toast.dismiss(workingToast);
+  });
   router.beforeEach((to) => {
     if (
       store.lockedServiceId &&
@@ -116,6 +153,11 @@ async function openServiceBooking(button) {
   button.setAttribute("aria-expanded", "true");
 }
 function boot() {
+  // Inline bookings and service modals share a single notification host.
+  const toastHost = document.createElement("div");
+  toastHost.className = "px-booking-toast-host";
+  document.body.appendChild(toastHost);
+  createApp(PxToast).mount(toastHost);
   mountBooking();
   document.addEventListener("click", (event) => {
     const button =

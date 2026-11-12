@@ -1,4 +1,6 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
+import { toast } from '../../../shared/toast'
 import { ref } from 'vue'
 import PxModal from './PxModal.vue'
 import EditIcon from './icons/IconEdit.vue'
@@ -48,8 +50,10 @@ function save() {
   if (editing.value < 0) rows.push({ ...row })
   else rows[editing.value] = { ...row }
   emit('update:modelValue', rows)
+  toast.info('Shift updated. Save the schedule to apply your changes.')
   form.value = null
 }
+useToastFeedback(error)
 </script>
 <template>
   <div class="px-weekly-hours">

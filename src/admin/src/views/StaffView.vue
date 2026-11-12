@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import WeeklyHoursEditor from '../components/WeeklyHoursEditor.vue'
 import PxModal from '../components/PxModal.vue'
 import { onMounted, ref } from 'vue'
@@ -26,7 +27,7 @@ async function bulkDelete() {
   deleting.value = true
   error.value = ''
   try {
-    await api('admin/staff/bulk-delete', { method: 'POST', body: { ids } })
+    await api('admin/staff/bulk-delete', { method: 'POST', body: { ids }, toast: { working: 'Deleting staff records…', success: 'Selected staff records deleted.' } })
     selected.value = []
     await load()
   } catch (e) {
@@ -199,6 +200,7 @@ function removeServiceLink(index) {
 }
 
 onMounted(load)
+useToastFeedback(error)
 </script>
 
 <template>

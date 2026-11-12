@@ -14,7 +14,7 @@ function sync() {
     if (!(child instanceof HTMLElement)) continue
     if (!inert.has(child)) inert.set(child, child.inert)
     child.inert = top
-      ? child !== top.overlay && !child.contains(top.overlay)
+      ? child !== top.overlay && !child.contains(top.overlay) && !child.matches('.px-toasts')
       : inert.get(child) || false
   }
 }
@@ -35,23 +35,23 @@ function keydown(event: KeyboardEvent) {
     return
   }
   if (event.key !== 'Tab') return
-  const fields = Array.from(
-    top.dialog.querySelectorAll<HTMLElement>(
-      'button:not(:disabled), input:not(:disabled), select:not(:disabled):not([tabindex="-1"]), textarea:not(:disabled), a[href], [tabindex="0"]',
+  const fields = [
+    ...Array.from(
+      top.dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled):not([tabindex="-1"]), textarea:not(:disabled), a[href], [tabindex="0"]',
+      ),
     ),
-  ).filter((el) => el.getClientRects().length)
+    ...Array.from(document.querySelectorAll<HTMLElement>('.px-toasts button:not(:disabled)')),
+  ].filter((el) => el.getClientRects().length)
+  const withinDialog =
+    top.dialog.contains(document.activeElement) ||
+    (document.activeElement instanceof Element && !!document.activeElement.closest('.px-toasts'))
   const first = fields[0],
     last = fields.at(-1)
-  if (
-    event.shiftKey &&
-    (document.activeElement === first || !top.dialog.contains(document.activeElement))
-  ) {
+  if (event.shiftKey && (document.activeElement === first || !withinDialog)) {
     event.preventDefault()
     last?.focus()
-  } else if (
-    !event.shiftKey &&
-    (document.activeElement === last || !top.dialog.contains(document.activeElement))
-  ) {
+  } else if (!event.shiftKey && (document.activeElement === last || !withinDialog)) {
     event.preventDefault()
     first?.focus()
   }

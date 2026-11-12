@@ -3,6 +3,7 @@ import { computed, watchEffect, provide, ref, onMounted } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 
 import { api } from './api'
+import PxToast from '../../shared/PxToast.vue'
 const currency = ref('USD')
 provide('pxCurrency', currency)
 provide('pxSetCurrency', (value: string) => {
@@ -26,6 +27,7 @@ watchEffect(() => {
 </script>
 
 <template>
+  <PxToast />
   <div>
     <header class="px-header">
       <h1>Appointment Pro</h1>

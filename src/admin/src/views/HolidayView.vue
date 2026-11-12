@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import PxModal from '../components/PxModal.vue'
 import { computed, onMounted, ref } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
@@ -126,6 +127,7 @@ async function remove(row) {
   }
 }
 onMounted(load)
+useToastFeedback(error)
 </script>
 <template>
   <DeleteConfirmation

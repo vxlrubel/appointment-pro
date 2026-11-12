@@ -1,4 +1,5 @@
 ﻿<script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
@@ -41,7 +42,7 @@ async function bulkDelete() {
   deleting.value = true
   error.value = ''
   try {
-    await api('payments/bulk-delete', { method: 'POST', body: { ids } })
+    await api('payments/bulk-delete', { method: 'POST', body: { ids }, toast: { working: 'Deleting payments…', success: 'Selected payments deleted.' } })
     selected.value = []
     await load()
   } catch (e) {
@@ -51,6 +52,7 @@ async function bulkDelete() {
   }
 }
 onMounted(load)
+useToastFeedback(error)
 </script>
 
 <template>

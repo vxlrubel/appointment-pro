@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import PxModal from '../components/PxModal.vue'
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
@@ -79,6 +80,7 @@ async function saveRecipients() {
   }
 }
 onMounted(load)
+useToastFeedback(error)
 </script>
 <template>
   <div class="px-notification-tabs" role="tablist" aria-label="Notification recipients">

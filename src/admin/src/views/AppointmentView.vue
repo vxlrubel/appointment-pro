@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import PxModal from '../components/PxModal.vue'
 import { onMounted, ref, watch } from 'vue'
 import { api } from '../api'
@@ -25,7 +26,7 @@ async function bulkDelete() {
   deleting.value = true
   error.value = ''
   try {
-    await api('appointments/bulk-delete', { method: 'POST', body: { ids } })
+    await api('appointments/bulk-delete', { method: 'POST', body: { ids }, toast: { working: 'Deleting appointments…', success: 'Selected appointments deleted.' } })
     selected.value = []
     await load()
   } catch (e) {
@@ -209,6 +210,7 @@ async function setStatus(id, status) {
 }
 
 onMounted(load)
+useToastFeedback(error)
 </script>
 
 <template>

@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
@@ -34,6 +35,7 @@ async function save() {
     saving.value = false
   }
 }
+useToastFeedback(error)
 </script>
 <template>
   <p class="px-muted">

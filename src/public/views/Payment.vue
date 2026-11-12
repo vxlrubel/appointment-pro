@@ -4,6 +4,7 @@ import { nextTick, onBeforeUnmount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useBooking } from "../store";
 import { api } from "../api";
+import { useWorkingToast } from "../../shared/useToastFeedback";
 const store = useBooking();
 const router = useRouter();
 const cardHost = ref(null);
@@ -11,6 +12,7 @@ const paypalHost = ref(null);
 const confirming = ref(false);
 const providerLoading = ref(false);
 const cardReady = ref(false);
+useWorkingToast(() => confirming.value ? "Confirming your payment…" : providerLoading.value ? "Loading payment form…" : "");
 let stripe, card;
 function loadScript(src, name) {
   if (window[name]) return Promise.resolve(window[name]);

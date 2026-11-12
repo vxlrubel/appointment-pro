@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import PxModal from './PxModal.vue'
 import { computed, onMounted, ref } from 'vue'
 import { api } from '../api'
@@ -32,7 +33,7 @@ async function bulkDelete() {
   deleting.value = true
   error.value = ''
   try {
-    await api('admin/' + props.path + '/bulk-delete', { method: 'POST', body: { ids } })
+    await api('admin/' + props.path + '/bulk-delete', { method: 'POST', body: { ids }, toast: { working: 'Deleting selected records…', success: 'Selected records deleted.' } })
     selected.value = []
     await load()
   } catch (e) {
@@ -172,6 +173,7 @@ onMounted(async () => {
   }
   await load()
 })
+useToastFeedback(error)
 </script>
 
 <template>

@@ -1,4 +1,6 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
+import { toast } from '../../../shared/toast'
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import { copyText } from '../utils/clipboard'
@@ -98,11 +100,13 @@ async function copy(row) {
   try {
     await copyText(row.link)
     message.value = 'Affiliate link copied.'
+    toast.success(message.value)
   } catch {
     error.value = 'Copy is unavailable. Select the link text and copy it manually.'
   }
 }
 onMounted(load)
+useToastFeedback(error)
 </script>
 <template>
   <DeleteConfirmation

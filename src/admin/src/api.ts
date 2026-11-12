@@ -1,3 +1,5 @@
+import { toast } from '../../shared/toast'
+
 export interface ApiConfig {
 	root: string
 	nonce: string
@@ -7,6 +9,7 @@ export interface ApiOptions {
 	method?: string
 	body?: unknown
 	headers?: Record<string, string>
+	toast?: false | { working?: string; success?: string }
 }
 
 function config(): ApiConfig {
@@ -22,7 +25,7 @@ function config(): ApiConfig {
 	return { root: '/wp-json/px-appointment/v1/', nonce: '' }
 }
 
-export async function api<T = any>(path: string, options: ApiOptions = {}): Promise<T> {
+async function request<T = any>(path: string, options: ApiOptions = {}): Promise<T> {
 	const cfg = config()
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/json',
@@ -60,4 +63,24 @@ export async function api<T = any>(path: string, options: ApiOptions = {}): Prom
 	}
 
 	return data as T
+}
+
+/** Mutations report their full lifecycle; background reads only report failures. */
+export async function api<T = any>(path: string, options: ApiOptions = {}): Promise<T> {
+	const { toast: feedback, ...requestOptions } = options
+	const perform = () => request<T>(path, requestOptions)
+	if (feedback === false) return perform()
+	const method = (options.method || 'GET').toUpperCase()
+	if (!['GET', 'HEAD'].includes(method)) {
+		return toast.promise(perform, {
+			working: feedback?.working || (method === 'DELETE' ? 'Deleting…' : 'Saving changes…'),
+			success: feedback?.success || (method === 'DELETE' ? 'Deleted successfully.' : 'Changes saved successfully.'),
+		})
+	}
+	try {
+		return await perform()
+	} catch (error) {
+		toast.error(error instanceof Error ? error.message : 'Unable to load data. Please try again.')
+		throw error
+	}
 }

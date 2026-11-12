@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import { ref } from 'vue'
 import { api } from '../api'
 import DeleteConfirmation from '../components/DeleteConfirmation.vue'
@@ -28,7 +29,14 @@ async function resetDb() {
   busy.value = 'reset'
   clearStatus()
   try {
-    await api('admin/database/reset', { method: 'POST', body: {} })
+    await api('admin/database/reset', {
+      method: 'POST',
+      body: {},
+      toast: {
+        working: 'Resetting the database…',
+        success: 'Database reset. Notification templates were kept.',
+      },
+    })
     message.value = 'Database reset. Booking data is empty. Notification templates were kept.'
   } catch (e) {
     error.value = e.message
@@ -50,7 +58,11 @@ async function insertDemo() {
   busy.value = 'demo'
   clearStatus()
   try {
-    const res = await api('admin/database/demo', { method: 'POST', body: {} })
+    const res = await api('admin/database/demo', {
+      method: 'POST',
+      body: {},
+      toast: { working: 'Inserting demo content…', success: 'Demo content inserted successfully.' },
+    })
     message.value =
       'Demo content inserted: ' +
       (res.appointments || 0) +
@@ -80,7 +92,11 @@ async function exportCsv() {
   busy.value = 'export'
   clearStatus()
   try {
-    const res = await api('admin/database/export', { method: 'POST', body: {} })
+    const res = await api('admin/database/export', {
+      method: 'POST',
+      body: {},
+      toast: { working: 'Preparing your export…', success: 'Export ready to download.' },
+    })
     const blob = new Blob([res.csv || ''], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -139,7 +155,11 @@ async function importCsv() {
   clearStatus()
   try {
     const csv = await importFile.value.text()
-    const res = await api('admin/database/import', { method: 'POST', body: { csv } })
+    const res = await api('admin/database/import', {
+      method: 'POST',
+      body: { csv },
+      toast: { working: 'Importing booking data…', success: 'Booking data imported successfully.' },
+    })
     message.value = 'Import complete' + (res.counts ? ': ' + summarizeCounts(res.counts) : '.')
   } catch (e) {
     error.value = e.message
@@ -147,6 +167,7 @@ async function importCsv() {
     busy.value = ''
   }
 }
+useToastFeedback(error)
 </script>
 <template>
   <DeleteConfirmation

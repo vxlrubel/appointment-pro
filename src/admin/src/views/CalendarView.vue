@@ -1,4 +1,5 @@
 <script setup>
+import { useToastFeedback } from '../../../shared/useToastFeedback'
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import LoadingSkeleton from '../components/LoadingSkeleton.vue'
@@ -42,6 +43,7 @@ onMounted(async () => {
     loading.value = false
   }
 })
+useToastFeedback(error)
 </script>
 
 <template>
