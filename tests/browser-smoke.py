@@ -25,7 +25,7 @@ server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 try:
     with tempfile.TemporaryDirectory(prefix='px-appointment-smoke-', ignore_cleanup_errors=True) as profile:
-        for fixture in ['ui-smoke.html', 'ui-smoke.html?scenario=preset', 'ui-smoke.html?scenario=failure', 'admin-smoke.html', 'service-modal-smoke.html', 'service-modal-smoke.html?scenario=coexist', 'service-modal-smoke.html?scenario=failure']:
+        for fixture in ['admin-cache-smoke.html', 'ui-smoke.html', 'ui-smoke.html?scenario=preset', 'ui-smoke.html?scenario=failure', 'admin-smoke.html', 'service-modal-smoke.html', 'service-modal-smoke.html?scenario=coexist', 'service-modal-smoke.html?scenario=failure']:
             url = f'http://127.0.0.1:{server.server_port}/tests/{fixture}'
             result = subprocess.run([
                 chrome, '--headless', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
