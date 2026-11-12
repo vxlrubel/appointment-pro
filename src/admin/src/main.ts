@@ -8,8 +8,10 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { startAdminCacheSync } from './api'
 
 const app = createApp(App)
+app.onUnmount(startAdminCacheSync())
 
 app.component('PxSelect', PxSelect)
 app.component('PxInput', PxInput)
