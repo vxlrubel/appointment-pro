@@ -21,6 +21,7 @@ export async function api(path, options = {}) {
     cfg.root.replace(/\/?$/, "/") + path.replace(/^\//, ""),
     {
       ...options,
+      cache: "no-store",
       headers,
       body:
         options.body && typeof options.body !== "string"
